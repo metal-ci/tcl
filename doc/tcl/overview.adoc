@@ -1,0 +1,16 @@
+////
+Copyright 2023 Klemens Morgenstern
+
+Distributed under the Boost Software License, Version 1.0.
+
+See accompanying file LICENSE_1_0.txt or copy at
+http://www.boost.org/LICENSE_1_0.txt
+////
+:example-dir: ../../example
+:include-dir: ../../include/boost/tcl
+
+[#overview]
+# Overview
+
+This library makes binding tcl & C++ easy, while not hiding the Tcl api.
+It is meant as a utility to reduce the boilerplate of tcl-bindings, not as a wrapper.
