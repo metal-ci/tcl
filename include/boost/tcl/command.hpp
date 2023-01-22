@@ -141,7 +141,7 @@ struct overload_traits<Return(Args...)>
     static int call_equal(Func * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
     {
         const auto p = reinterpret_cast<function_type>(func);
-        assert(objc == cnt + 1);
+        BOOST_ASSERT(objc == cnt + 1);
         return call_equal_impl(p, interp, objc, objv, seq);
     }
 
@@ -160,7 +160,7 @@ struct overload_traits<Return(Args...)>
     static int call_equivalent(Func * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
     {
         const auto p = reinterpret_cast<function_type>(func);
-        assert(objc == cnt + 1);
+        BOOST_ASSERT(objc == cnt + 1);
         return call_equivalent_impl(p, interp, objc, objv, seq);
     }
 
@@ -168,7 +168,7 @@ struct overload_traits<Return(Args...)>
     static int call_castable(Func * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
     {
         const auto p = reinterpret_cast<function_type>(func);
-        assert(objc == cnt + 1);
+        BOOST_ASSERT(objc == cnt + 1);
         return try_invoke_no_string(p, interp, objc, objv, seq);
     }
 
@@ -176,7 +176,7 @@ struct overload_traits<Return(Args...)>
     static int call_with_string(Func * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
     {
         const auto p = reinterpret_cast<function_type>(func);
-        assert(objc == cnt + 1);
+        BOOST_ASSERT(objc == cnt + 1);
         return invoke(p, interp, objc, objv, seq);
     }
 };
@@ -294,7 +294,7 @@ struct overload_traits_with_interp<Return(Interpreter, Args...)>
     static int call_equal(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
     {
         const auto p = reinterpret_cast<function_type>(func);
-        assert(objc == cnt + 1);
+        BOOST_ASSERT(objc == cnt + 1);
         return call_equal_impl(p, interp, objc, objv, seq);
     }
 
@@ -312,20 +312,20 @@ struct overload_traits_with_interp<Return(Interpreter, Args...)>
     static int call_equivalent(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
     {
         const auto p = reinterpret_cast<function_type>(func);
-        assert(objc == cnt + 1);
+        BOOST_ASSERT(objc == cnt + 1);
         return call_equivalent_impl(p, interp, objc, objv, seq);
     }
     static int call_castable(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
     {
         const auto p = reinterpret_cast<function_type>(func);
-        assert(objc == cnt + 1);
+        BOOST_ASSERT(objc == cnt + 1);
         return try_invoke_no_string(p, interp, objc, objv, seq);
     }
 
     static int call_with_string(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
     {
         const auto p = reinterpret_cast<function_type>(func);
-        assert(objc == cnt + 1);
+        BOOST_ASSERT(objc == cnt + 1);
         return invoke(p, interp, objc, objv, seq);
     }
 };

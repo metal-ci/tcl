@@ -9,7 +9,7 @@
 #define BOOST_TCL_BUILTIN_STRING_HPP
 
 #include <boost/tcl/cast.hpp>
-#include <boost/utility/string_view.hpp>
+#include <boost/core/detail/string_view.hpp>
 
 #include <string>
 
@@ -17,26 +17,26 @@ namespace boost::tcl
 {
 
 inline std::optional<string_view> tag_invoke(
-        cast_tag<string_view>,
-        Tcl_Interp *,
-        boost::intrusive_ptr<Tcl_Obj> val)
+    cast_tag<core::string_view>,
+    Tcl_Interp *,
+    boost::intrusive_ptr<Tcl_Obj> val)
 {
-    int sz;
-    char * c = Tcl_GetStringFromObj(val.get(), &sz);
-    return string_view(c, sz);
+  int sz;
+  char * c = Tcl_GetStringFromObj(val.get(), &sz);
+  return string_view(c, sz);
 }
 
-inline object_ptr tag_invoke(const struct convert_tag &, Tcl_Interp*, string_view sv)
+inline object_ptr tag_invoke(const struct convert_tag &, Tcl_Interp*, core::string_view sv)
 {
-    return Tcl_NewStringObj(sv.data(), sv.size());
+  return Tcl_NewStringObj(sv.data(), sv.size());
 }
 
 
 inline bool tag_invoke(
-        const equal_type_tag<string_view> & tag,
-        const Tcl_ObjType & type)
+    const equal_type_tag<core::string_view> & tag,
+    const Tcl_ObjType & type)
 {
-    return type.name && type.name == string_view("string");
+  return type.name && type.name == string_view("string");
 }
 
 template<typename Traits, typename Allocator>
