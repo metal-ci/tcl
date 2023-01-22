@@ -42,11 +42,21 @@ struct proc
     return Tcl_GetObjResult(interp_);
   }
 
+  auto operator()()
+  {
+    if (TCL_OK != Tcl_EvalObjEx(interp_, obj_.get(), 0))
+      throw_result(interp_);
+    return Tcl_GetObjResult(interp_);
+  }
+
   const boost::tcl::object_ptr & object() const {return obj_;}
 
+  int flags() const {return flags_;}
+  void set_flags(int flags) {flags_= flags;}
  private:
   Tcl_Interp * interp_;
   boost::tcl::object_ptr obj_;
+  int flags_ = 0;
 };
 
 inline std::optional<proc> tag_invoke(
