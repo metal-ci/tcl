@@ -156,7 +156,7 @@ bool invoke_describe_can_cast(bool(*impl)(const std::type_info &))
     return impl(typeid(std::remove_pointer_t<Target>));
 }
 
-void make_reference_duplicate(Tcl_Obj * src,
+inline void make_reference_duplicate(Tcl_Obj * src,
                               Tcl_Obj * dup)
 {
     dup->internalRep.twoPtrValue.ptr1 = src->internalRep.twoPtrValue.ptr1;

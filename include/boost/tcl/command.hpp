@@ -18,6 +18,7 @@
 #include <boost/unordered_map.hpp>
 
 #include <boost/tcl/class.hpp>
+#include <boost/tcl/exception.hpp>
 #include <boost/tcl/enum.hpp>
 
 namespace boost::tcl

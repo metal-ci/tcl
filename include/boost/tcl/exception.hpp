@@ -103,7 +103,6 @@ inline object_ptr make_exception_object(
     return obj;
 }
 
-
 BOOST_NORETURN inline void throw_result(Tcl_Interp * interp)
 {
     Tcl_RegisterObjType(&exception_ptr_type);
