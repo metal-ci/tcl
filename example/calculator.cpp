@@ -9,6 +9,7 @@
 // simple CLI that's just a calculator
 
 #include <boost/tcl.hpp>
+#include <boost/tcl/builtin/bignum.hpp>
 
 template<typename T> T add(T x, T y) {return x + y;}
 template<typename T> T sub(T x, T y) {return x - y;}

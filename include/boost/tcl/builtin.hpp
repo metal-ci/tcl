@@ -22,7 +22,6 @@
  *
  */
 
-#include <boost/tcl/builtin/bignum.hpp>
 #include <boost/tcl/builtin/bytearray.hpp>
 #include <boost/tcl/builtin/dict.hpp>
 #include <boost/tcl/builtin/float.hpp>

@@ -156,6 +156,9 @@ The bignum functionality of tcl is utilizing a tom-match fork; boost.tcl provide
 using bignum = multiprecision::number<tommath_int> ;
 ```
 
+NOTE: The Tcl API defines a lot of `mp_*` preprocessor symbols, that clash with other libraries.
+Therefor `<boost/tcl/builtin/bignum.hpp>` must be explicitly included.
+
 ### proc
 
 The `proc` builting type can be used to get a handle to tcl functions that can be used for callbacks.
