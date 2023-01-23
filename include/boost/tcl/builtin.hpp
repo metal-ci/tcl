@@ -28,6 +28,7 @@
 #include <boost/tcl/builtin/float.hpp>
 #include <boost/tcl/builtin/integral.hpp>
 #include <boost/tcl/builtin/list.hpp>
+ #include <boost/tcl/builtin/proc.hpp>
 #include <boost/tcl/builtin/string.hpp>
 
 

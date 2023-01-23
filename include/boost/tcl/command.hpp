@@ -572,6 +572,12 @@ inline command & create_command(Tcl_Interp *interp, const char * name)
     return *cd;
 }
 
+inline command & create_command(const interpreter_ptr & interp, const char * name)
+{
+  return create_command(interp.get(), name);
+}
+
+
 namespace detail
 {
 

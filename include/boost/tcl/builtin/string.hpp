@@ -16,7 +16,7 @@
 namespace boost::tcl
 {
 
-inline std::optional<string_view> tag_invoke(
+inline std::optional<core::string_view> tag_invoke(
     cast_tag<core::string_view>,
     Tcl_Interp *,
     boost::intrusive_ptr<Tcl_Obj> val)

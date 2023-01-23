@@ -113,6 +113,12 @@ BOOST_NORETURN inline void throw_result(Tcl_Interp * interp)
         throw_exception(tcl_exception(res));
 }
 
+BOOST_NORETURN inline void throw_result(const interpreter_ptr & interp)
+{
+  throw_result(interp.get());
+}
+
+
 inline std::optional<std::exception_ptr> tag_invoke(
         cast_tag<std::exception_ptr>,
         Tcl_Interp *,

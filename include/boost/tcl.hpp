@@ -16,6 +16,5 @@
 #include <boost/tcl/interpreter.hpp>
 #include <boost/tcl/object.hpp>
 #include <boost/tcl/package.hpp>
-#include <boost/tcl/types.hpp>
 
 #endif //BOOST_TCL_H
