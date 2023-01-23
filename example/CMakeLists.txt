@@ -1,0 +1,15 @@
+file(GLOB_RECURSE ALL_CPP_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+
+foreach(module ${ALL_CPP_FILES})
+  get_filename_component(stem ${module} NAME_WE)
+  if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${stem}.tcl)
+    add_library(${stem} SHARED ${module})
+    target_link_libraries(${stem} PUBLIC Boost::system)
+    target_include_directories(${stem} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+  else()
+    add_executable(${stem} ${module})
+    target_link_libraries(${stem}  PUBLIC ${TCL_LIBRARY} Boost::system Boost::json)
+    target_include_directories(${stem} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include ${TCL_INCLUDE_PATH})
+  endif()
+endforeach()
+
