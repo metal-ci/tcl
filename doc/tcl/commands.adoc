@@ -1,0 +1,146 @@
+[#commands]
+## Commands
+
+TCL uses commands as it's fundamental building block,
+which are akin to functions in other languages.
+In this library commands are used to declare classes & enums as well as functions
+
+
+```cpp
+// ip is our interpreter
+// the cmd is a basic, thus empty command
+auto & cmd = tcl::create_command(ip, "my-command");
+```
+
+### Functions
+
+```cpp
+cmd.add_function(+[]{std::cout << "Hello world!" << std::endl;});
+```
+
+```tcl
+# will call the argument less overload of `command` print "Hello world!"
+command
+```
+
+Function can also be overloaded like this:
+
+```cpp
+cmd.add_function(+[](int i){std::cout << "Is int: " << i << std::endl;});
+cmd.add_function(+[](std::string str){std::cout << "Is str: " << str << std::endl;});
+```
+
+```tcl
+# will call the argument list of `command` print "Hello world!"
+command
+
+# print "is int: 42
+command 42
+
+# print "is str: foobar
+command foobar
+```
+
+## Subcommands
+
+For CLIs subcommands can be a good way to organize a complex command set.
+
+```cpp
+auto & sub = cmd.add_subcommand("sub-1");
+sub.add_function([](int i) {std::cout << "Sub command: " << i << std::endl});
+```
+
+```tcl
+# print "Sub command 123
+command sub-1 123
+```
+
+## Enums
+
+Commands can also be used "as" enums.
+
+```cpp
+enum foobar { foo = 1, bar };
+BOOST_DESCRIBE_ENUM(foobar, foo, bar);
+
+cmd.add_function(+[](foobar fb) {std::cout << "got foobar value: " << static_cat<foobar>(fb) << std::endl;});
+
+tcl::create_command(ip, "foobar").add_enum<foobar>();
+```
+
+No we can use the enum, as shown below.
+
+```tcl
+# create an enum with value bar call command with it
+command [foobar bar]
+
+# create an enum with value 1 (foo) call command with it
+command [foobar foo]
+```
+
+### Classes
+
+Classes can be used to create a more complex object to access the class and it's members:
+
+```cpp
+struct
+
+
+struct example_class
+{
+    int value;
+
+    example_class(int i);
+    example_class(const test_class &tc);
+
+    static int static_value ;
+    static int static_get();
+    static void static_set(int v);
+
+    int get() const;
+    void set(int);
+};
+
+BOOST_DESCRIBE_STRUCT(example_class, (), (get, set, value, static_value, static_get, static_set));
+
+    auto & cmd = boost::tcl::create_command(mod, "example-class");
+    // create the class with all the described members
+    cmd.add_class<example_class>()
+    // register a constructor
+       .add_constructor<example_class(int)>();
+```
+
+The usage of the class in tcl looks like this:
+
+```cpp
+# Create a new class with example_class(int) and assign the value to `example`
+set example [example-class new 42]
+
+# *$example derefences the pointer to access members
+
+# get value
+*$example .get value
+
+# set value
+*$example .set value 42
+
+# call get
+*$example get
+
+# call set
+*$example set 42
+
+
+# Statics
+## get the static_value
+example-class .get static_value
+
+## set the static_value
+example-class .set static_value 42
+
+## call static_get
+example-class static_get
+
+## call static_set
+example-class static_set
+```

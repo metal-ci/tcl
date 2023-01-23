@@ -14,3 +14,27 @@ http://www.boost.org/LICENSE_1_0.txt
 
 This library makes binding tcl & C++ easy, while not hiding the Tcl api.
 It is meant as a utility to reduce the boilerplate of tcl-bindings, not as a wrapper.
+
+## Why TCL?
+
+Tcl is a unique combination of a full script language with a command language.
+You can execute other programs with `tclsh`, like this:
+
+```tcl
+g++ hello_world.cpp
+```
+
+while at the same time load and execute arbitrary C or C++ code, e.g.:
+
+```tcl
+load ./libbuildhelpers[info sharedlibextension]
+
+g++ [list-sources]
+```
+
+where `list-sources` is a command defined in C++.
+
+Since tcl can be embedded in C++ as well, it is also a great starting point for interactive console applications;
+and because of the syntax it can be used to create DSLs that do not look and feel like Tcl.
+`redis` and `sqlite` started out that way.
+

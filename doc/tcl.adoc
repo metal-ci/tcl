@@ -21,6 +21,10 @@ Klemens Morgenstern
 :leveloffset: +1
 
 include::tcl/overview.adoc[]
+include::tcl/module.adoc[]
+include::tcl/embed.adoc[]
+include::tcl/builtin_types.adoc[]
+include::tcl/commands.adoc[]
 
 :leveloffset: -1
 

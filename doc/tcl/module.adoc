@@ -1,0 +1,32 @@
+[#module]
+# C++ Modules
+
+In order to writing modules into TCL a few naming conventions must be kept. For our module named `example`,
+our shared object must be named `libexample.so` or `libexample.dll`.
+
+The module name then needs to be `Title_Case`, like so:
+
+```cpp
+#include <boost/tcl/builtin.hpp>
+#include <boost/tcl/package.hpp>
+#include <boost/tcl/command.hpp>
+
+BOOST_TCL_PACKAGE(Example, "1.0", mod)
+{
+  namespace tcl = boost::tcl;
+  tcl::create_command(mod, "hello")
+    .add_function(
+        [](std::string name)
+        {
+            std::cout << "Hello " << name << "!" << std::endl;
+        });
+}
+```
+
+```tcl
+load ./libbuiltin[info sharedlibextension]
+
+# call the C++ function with
+hello user
+# prints "Hello user!"
+```

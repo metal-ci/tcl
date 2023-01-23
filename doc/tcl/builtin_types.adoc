@@ -1,0 +1,169 @@
+[#builtin]
+## Builtin Types
+
+While TCL has a type system, most types are also strings at the same time.
+This will lead to some interesting problems for type conversions.
+
+`Tcl_Obj` are will be wrapped in a `intrusive_ptr` that keeps track of it's lifetime as follows:
+
+```cpp
+using object_ptr  = boost::intrusive_ptr<Tcl_Obj>;
+```
+
+### To TCL_Obj
+
+Creating an `object_ptr` from a C++ type used the `make_object` function, which also needs the `Tcl_Interp` for context
+as well:
+
+```cpp
+template<typename T>
+tcl::object_ptr tcl::make_object(Tcl_Interp *interp, T && t);
+
+// e.g.:
+extern Tcl_Interp * interp;
+tcl::object_ptr op = tcl::make_object(interp, 42);
+```
+
+In order to provide conversions like this, a user can add a `tag_invoke` for his type `my_type` function like this:
+
+```cpp
+inline object_ptr tag_invoke(const tcl::convert_tag &, Tcl_Interp*, my_type i);
+```
+
+### Casting to C++
+
+To manually convert an `object_ptr` to a C++ type is to use `tcl::cast` or `tcl::try_cast` like so:
+
+```cpp
+extern Tcl_Interp * interp;
+tcl::object_ptr op = tcl::make_object(interp, 42);
+
+// throw if it's not castable
+int i = tcl::cast<int>(interp, op);
+
+std::optional<int> ip = tcl::try_cast<int>(interp, op);
+```
+
+In order to add your type (`my_type`) casts, the following `tag_invoke` need to be added:
+
+```cpp
+inline std::optional<my_type> tag_invoke(const tcl::cast_cast<my_type> &, Tcl_Interp*, object_ptr);
+```
+
+[#conversions]
+### Picking the correct ype
+
+The problem with tcl conversion is the ambiguity based on the weak typing,
+which can become problematic for overloaded functions.
+Therefor we have a rank for conversions.
+
+[cols="1,3,20"]
+|===
+| Rank | Name | Definition
+
+| *1* | `equal` | typePtr corresponds to it (it IS the same type)
+| *2* | `equivalent` | typePtr is logically convertible (e.g. `int` -> `short`)
+| *3* | `castable` | can cast, i.e. convert with Tcl (except for string, bc everything is a string)
+| *4* | `string` | Because in TCL evwerything is a string
+|===
+
+This means that an overloaded function will look for the best match according
+to this rank when picking the correct overload.
+
+If a cast function is defined your type will match at step 3; if you want to opt into the
+comparison your type `my_type` to define the following functions.
+
+```cpp
+// add equality check
+inline bool tag_invoke(const equal_type_tag<my_type> & tag, const Tcl_ObjType & type);
+
+// add equivalency check
+inline bool tag_invoke(const equivalent_type_tag<my_type> & tag, const Tcl_ObjType & type);
+```
+
+
+## Builtin types
+
+### Numeric
+
+Integral types such as `int`, `bool` and `float` are directly convertible both ways.
+
+```cpp
+extern Tcl_Interp * interp;
+tcl::object_ptr op = tcl::make_object(interp, 4.2);
+float f = tcl::cast<float>(interp, op);
+assert(f == 4.2);
+```
+
+### string
+
+Since everything is a string, string conversions (including `string_view`) are trivial as well:
+
+```cpp
+extern Tcl_Interp * interp;
+tcl::object_ptr op = tcl::make_object(interp, "test-value");
+auto s = tcl::cast<core::string_view>(interp, op);
+assert(s == "test-value");
+```
+
+### list
+
+TCL lists can be converted to any list-like type, such as `std::vector`.
+That is any type that is not a string, has a value type that can be converted, too and a begin & end function.
+
+```cpp
+extern Tcl_Interp * interp;
+std::array<int, 10> arr = {0,1,2,3,4,5,6,7,8,9};
+tcl::object_ptr op = tcl::make_object(interp, arr);
+auto vec = tcl::cast<std::vector<int>>(interp, op);
+assert(std::equal(arr.begin(), arr.end(), vec.begin(), vec.end()));
+```
+
+### dict
+
+TCL dicts can be converted to any map-like type, such as `std::map`.
+That is any type that has a `key_type` and `mapped_type`, plus `begin` & `end`
+
+```cpp
+extern Tcl_Interp * interp;
+std::map<std::string, std::string> mp = {{"foo", "bar"}, {"bar", "foo"}};
+tcl::object_ptr op = tcl::make_object(interp, mp);
+auto ump = tcl::cast<std::unordered_map<std::string, std::string>>(interp, op);
+assert(std::equal(mp.begin(), mp.end(), ump.begin(), ump.end()));
+```
+
+
+### bytearray
+
+bytearray is a separate type in tcl, which can be used to deal with raw memory.
+boost.tcl supports `boost::span<unsigned char>` and `std::vector<unsigned char>`.
+
+```cpp
+extern Tcl_Interp * interp;
+std::vector<unsigned char> vec = {1u, 2u, 3u};
+tcl::object_ptr op = tcl::make_object(interp, mp);
+auto rw = tcl::cast<boost::span<unsigned char>>(interp, op);
+assert(vec.size() == rw.size()):
+assert(std::memcmp(vec.data(), rw.data(0, vec.size()) == 0);
+```
+
+### bignum
+
+The bignum functionality of tcl is utilizing a tom-match fork; boost.tcl provides an implementation of
+`boost::multiprecision::number` that can be used for those bignums:
+
+```cpp
+using bignum = multiprecision::number<tommath_int> ;
+```
+
+### proc
+
+The `proc` builting type can be used to get a handle to tcl functions that can be used for callbacks.
+
+```cpp
+extern Tcl_Interp * interp;
+extern Tcl_Obj * cmd_obj;
+
+proc p = tcl::cast<tcl::proc>(interp, cmd_obj);
+p(42); // call it
+```

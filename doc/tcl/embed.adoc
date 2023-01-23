@@ -1,0 +1,44 @@
+[#embedding]
+## Embedding Tcl
+
+Embedding is equally easy; note that this library doesn't try to hide the C interface,
+but to avoid boilerplate & provide usage of the C++ type system & exceptions.
+
+
+```cpp
+#include <boost/tcl.hpp>
+
+int main(int argc, char ** argv)
+try
+{
+  namespace tcl = boost::tcl;
+  // smart pointer to an interpreter
+  auto ip = boost::tcl::make_interpreter();
+
+  // find the executable so we can interpret argv/argc
+  Tcl_FindExecutable(doctest::getContextOptions()->binary_name.c_str());
+
+  // initialize
+  if (Tcl_Init(ip.get()) != TCL_OK)
+    tcl::throw_result(ip);
+
+  tcl::create_command(ip, "hello")
+    .add_function(
+      [](std::string name)
+      {
+        std::cout << "Hello " << name << "!" << std::endl;
+      });
+
+  // run the eval function
+  if (Tcl_Eval(ip.get(), R"(hello)") != TCL_OK)
+    tcl::throw_result(ip);
+
+  return 0;
+}
+catch (std::exception & e)
+{
+  // we're using exception because we might need to rethrow a C++ exception
+  std::cerr << "Exception: " << e.what() << std::endl;
+  return 1;
+}
+```
