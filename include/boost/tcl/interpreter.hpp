@@ -31,8 +31,6 @@ inline interpreter_ptr make_interpreter()
     return std::unique_ptr<Tcl_Interp, interpreter_deleter>(Tcl_CreateInterp());
 }
 
-
-
 }
 }
 

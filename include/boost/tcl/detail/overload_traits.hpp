@@ -11,6 +11,7 @@
 #include <tcl.h>
 
 #include <boost/assert.hpp>
+#include <boost/callable_traits.hpp>
 #include <cstdint>
 #include <tuple>
 #include <type_traits>
@@ -18,24 +19,22 @@
 namespace boost::tcl::detail
 {
 
-
 template<typename Func>
-struct overload_traits;
-
-template<typename Return, typename ... Args>
-struct overload_traits<Return(Args...)>
+struct overload_traits
 {
-  constexpr static std::size_t cnt = sizeof...(Args);
+  using args_type = boost::callable_traits::args_t<Func>;
+  using return_type = boost::callable_traits::return_type_t<Func>;
+
+  constexpr static std::size_t cnt = std::tuple_size<args_type>::value;
   constexpr static std::make_index_sequence<cnt> seq{};
-  using function_type = Return(*)(Args...);
+  using function_type = boost::callable_traits::function_type_t<Func>*;
 
   template<std::size_t Idx>
-  using type = std::tuple_element_t<Idx, std::tuple<Args...>>;
+  using type = std::tuple_element_t<Idx, args_type>;
 
   template<typename ... Opts>
-  static int try_invoke_no_string_impl(function_type func,
-                                       std::enable_if_t<!std::is_void_v<decltype(func(*std::declval<Opts>()...))>,  Tcl_Interp> * interp,
-  Opts && ... opts)
+  static int try_invoke_no_string_impl(function_type func, Tcl_Interp * interp,
+                                       std::false_type, Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
@@ -50,9 +49,8 @@ struct overload_traits<Return(Args...)>
   }
 
   template<typename ... Opts>
-  static int try_invoke_no_string_impl(function_type func,
-                                       std::enable_if_t<std::is_void_v<decltype(func(*std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-                                       Opts && ... opts)
+  static int try_invoke_no_string_impl(function_type func, Tcl_Interp * interp,
+                                       std::true_type,  Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
@@ -69,7 +67,7 @@ struct overload_traits<Return(Args...)>
                                   std::index_sequence<Idx...> seq = {})
   {
     return try_invoke_no_string_impl(
-        func, interp,
+        func, interp, std::is_void<return_type>{},
         // if you get an error you're missing some tag_invokes.
         try_cast_without_implicit_string<type<Idx>>(interp, objv[Idx + 1])...);
   }
@@ -77,8 +75,9 @@ struct overload_traits<Return(Args...)>
 
   template<typename ... Opts>
   static int invoke_impl(function_type func,
-                         std::enable_if_t<!std::is_void_v<decltype(func(*std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-  Opts && ... opts)
+                         Tcl_Interp  * interp,
+                         std::false_type, /* is void */
+                         Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
@@ -86,6 +85,7 @@ struct overload_traits<Return(Args...)>
       auto res = func(*std::move(opts)...);
       auto obj = make_object(interp, std::move(res));
       Tcl_SetObjResult(interp, obj.get());
+
       return TCL_OK;
     }
     else
@@ -94,7 +94,8 @@ struct overload_traits<Return(Args...)>
 
   template<typename ... Opts>
   static int invoke_impl(function_type func,
-                         std::enable_if_t<std::is_void_v<decltype(func(*std::declval<Opts>()...))>, Tcl_Interp>  * interp,
+                         Tcl_Interp  * interp,
+                         std::true_type, /* is void */
                          Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
@@ -107,13 +108,12 @@ struct overload_traits<Return(Args...)>
       return TCL_CONTINUE;
   }
 
-
   template<std::size_t ... Idx>
   static int invoke(function_type func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
                     std::index_sequence<Idx...> seq = {})
   {
     return invoke_impl(
-        func, interp,
+        func, interp, std::is_void<return_type>{},
         try_cast<type<Idx>>(interp, objv[Idx + 1])...);
   }
 
@@ -128,8 +128,7 @@ struct overload_traits<Return(Args...)>
       return TCL_CONTINUE;
   }
 
-  template<typename Func>
-  static int call_equal(Func * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
+  static int call_equal(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
     const auto p = reinterpret_cast<function_type>(func);
     BOOST_ASSERT(objc == cnt + 1);
@@ -147,24 +146,21 @@ struct overload_traits<Return(Args...)>
       return TCL_CONTINUE;
   }
 
-  template<typename Func>
-  static int call_equivalent(Func * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
+  static int call_equivalent(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
     const auto p = reinterpret_cast<function_type>(func);
     BOOST_ASSERT(objc == cnt + 1);
     return call_equivalent_impl(p, interp, objc, objv, seq);
   }
 
-  template<typename Func>
-  static int call_castable(Func * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
+  static int call_castable(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
     const auto p = reinterpret_cast<function_type>(func);
     BOOST_ASSERT(objc == cnt + 1);
     return try_invoke_no_string(p, interp, objc, objv, seq);
   }
 
-  template<typename Func>
-  static int call_with_string(Func * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
+  static int call_with_string(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
     const auto p = reinterpret_cast<function_type>(func);
     BOOST_ASSERT(objc == cnt + 1);
@@ -175,22 +171,21 @@ struct overload_traits<Return(Args...)>
 // same as above, but with interpreter
 
 template<typename Func>
-struct overload_traits_with_interp;
-
-template<typename Return, typename Interpreter, typename ... Args>
-struct overload_traits_with_interp<Return(Interpreter, Args...)>
+struct overload_traits_with_interp
 {
-  constexpr static std::size_t cnt = sizeof...(Args);
+  using args_type = mp11::mp_drop_c<boost::callable_traits::args_t<Func>, 1u>;
+  using return_type = boost::callable_traits::return_type_t<Func>;
+
+  constexpr static std::size_t cnt = std::tuple_size<args_type>::value;
   constexpr static std::make_index_sequence<cnt> seq{};
-  using function_type = Return(*)(Interpreter, Args...);
+  using function_type = boost::callable_traits::function_type_t<Func>*;
 
   template<std::size_t Idx>
-  using type = std::tuple_element_t<Idx, std::tuple<Args...>>;
+  using type = std::tuple_element_t<Idx, args_type>;
 
   template<typename ... Opts>
-  static int try_invoke_no_string_impl(function_type func,
-                                       std::enable_if_t<!std::is_void_v<decltype(func(std::declval<Tcl_Interp *>(), *std::declval<Opts>()...))>,  Tcl_Interp> * interp,
-  Opts && ... opts)
+  static int try_invoke_no_string_impl(function_type func, Tcl_Interp * interp,
+                                       std::false_type /* is void */, Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
@@ -205,9 +200,8 @@ struct overload_traits_with_interp<Return(Interpreter, Args...)>
   }
 
   template<typename ... Opts>
-  static int try_invoke_no_string_impl(function_type func,
-                                       std::enable_if_t<std::is_void_v<decltype(func(std::declval<Tcl_Interp *>(), *std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-                                       Opts && ... opts)
+  static int try_invoke_no_string_impl(function_type func, Tcl_Interp  * interp,
+                                       std::true_type /* is void */, Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
@@ -224,15 +218,14 @@ struct overload_traits_with_interp<Return(Interpreter, Args...)>
                                   std::index_sequence<Idx...> seq = {})
   {
     return try_invoke_no_string_impl(
-        func, interp,
+        func, interp, std::is_void<return_type>{},
         // if you get an error you're missing some tag_invokes.
         try_cast_without_implicit_string<type<Idx>>(interp, objv[Idx + 1])...);
   }
 
   template<typename ... Opts>
-  static int invoke_impl(function_type func,
-                         std::enable_if_t<!std::is_void_v<decltype(func(std::declval<Tcl_Interp *>(), *std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-  Opts && ... opts)
+  static int invoke_impl(function_type func, Tcl_Interp * interp,
+                         std::false_type /* is void */, Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
@@ -247,9 +240,8 @@ struct overload_traits_with_interp<Return(Interpreter, Args...)>
   }
 
   template<typename ... Opts>
-  static int invoke_impl(function_type func,
-                         std::enable_if_t<std::is_void_v<decltype(func(std::declval<Tcl_Interp *>(), *std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-                         Opts && ... opts)
+  static int invoke_impl(function_type func, Tcl_Interp  * interp,
+                         std::true_type /* is void */, Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
@@ -267,7 +259,7 @@ struct overload_traits_with_interp<Return(Interpreter, Args...)>
                     std::index_sequence<Idx...> seq = {})
   {
     return invoke_impl(
-        func, interp,
+        func, interp, std::is_void<return_type>{},
         try_cast<type<Idx>>(interp, objv[Idx + 1])...);
   }
 
@@ -321,30 +313,28 @@ struct overload_traits_with_interp<Return(Interpreter, Args...)>
   }
 };
 
-template<typename Pointer, Pointer p>
-struct member_overload_traits;
 
-template<typename Return, typename Class,  typename ... Args,
-    Return(Class::* Pointer)(Args...)>
-struct member_overload_traits<Return(Class::* const)(Args...), Pointer>
-    : overload_traits<Return(Class&, Args...)>
+template<typename Func, Func func>
+struct member_overload_traits
 {
-  typedef Return(Class::*function_type)(Args...);
-  constexpr static std::size_t cnt = sizeof...(Args);
+  using args_type = boost::callable_traits::args_t<Func>;
+  constexpr static std::size_t cnt = std::tuple_size<args_type>::value;
+  using function_type = boost::callable_traits::function_type_t<Func>*;
+  using return_type = boost::callable_traits::return_type_t<Func>;
   constexpr static std::make_index_sequence<cnt> seq{};
 
   template<std::size_t Idx>
-  using type = std::tuple_element_t<Idx, std::tuple<Args...>>;
+  using type = std::tuple_element_t<Idx, args_type>;
+  using class_type = type<0u>;
 
-  template<typename ... Opts>
-  static int try_invoke_no_string_impl(Class *cl,
-                                       std::enable_if_t<!std::is_void_v<decltype((cl->*Pointer)(*std::declval<Opts>()...))>,  Tcl_Interp> * interp,
-  Opts && ... opts)
+  template<typename Cl, typename ... Opts>
+  static int try_invoke_no_string_impl(Tcl_Interp * interp,
+                                       std::false_type, Cl * cl, Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      auto res = (cl->*Pointer)(*std::move(opts)...);
+      auto res = (cl->*func)(*std::move(opts)...);
       auto obj = make_object(interp, std::move(res));
       Tcl_SetObjResult(interp, obj.get());
       return TCL_OK;
@@ -353,15 +343,14 @@ struct member_overload_traits<Return(Class::* const)(Args...), Pointer>
       return TCL_CONTINUE;
   }
 
-  template<typename ... Opts>
-  static int try_invoke_no_string_impl(Class *cl,
-                                       std::enable_if_t<std::is_void_v<decltype((cl->*Pointer)(*std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-                                       Opts && ... opts)
+  template<typename Cl, typename ... Opts>
+  static int try_invoke_no_string_impl(Tcl_Interp * interp,
+                                       std::true_type, Cl * cl, Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      (cl->*Pointer)(*std::move(opts)...);
+      (cl->*func)(*std::move(opts)...);
       return TCL_OK;
     }
     else
@@ -369,26 +358,26 @@ struct member_overload_traits<Return(Class::* const)(Args...), Pointer>
   }
 
   template<std::size_t ... Idx>
-  static int try_invoke_no_string(Class *cl,
-                                  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
-                                  std::index_sequence<Idx...> seq = {})
+  static int try_invoke_no_string(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
+                                  std::index_sequence<0u, Idx...> seq = {})
   {
     return try_invoke_no_string_impl(
-        cl, interp,
+        interp, std::is_void<return_type>{},
         // if you get an error you're missing some tag_invokes.
+        static_cast<typename std::remove_reference_t<class_type> *>(objv[0]->internalRep.twoPtrValue.ptr1),
         try_cast_without_implicit_string<type<Idx>>(interp, objv[Idx + 1])...);
   }
 
 
-  template<typename ... Opts>
-  static int invoke_impl(Class *cl,
-                         std::enable_if_t<!std::is_void_v<decltype((cl->*Pointer)(*std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-  Opts && ... opts)
+  template<typename Cl, typename ... Opts>
+  static int invoke_impl(Tcl_Interp  * interp,
+                         std::false_type, /* is void */
+                         Cl * cl, Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      auto res = (cl->*Pointer)(*std::move(opts)...);
+      auto res = (cl->*func)(*std::move(opts)...);
       auto obj = make_object(interp, std::move(res));
       Tcl_SetObjResult(interp, obj.get());
       return TCL_OK;
@@ -397,221 +386,85 @@ struct member_overload_traits<Return(Class::* const)(Args...), Pointer>
       return TCL_CONTINUE;
   }
 
-  template<typename ... Opts>
-  static int invoke_impl(Class *cl,
-                         std::enable_if_t<std::is_void_v<decltype((cl->*Pointer)(*std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-                         Opts && ... opts)
+  template<typename Cl, typename ... Opts>
+  static int invoke_impl(Tcl_Interp  * interp,
+                         std::true_type, /* is void */
+                         Cl * cl, Opts && ... opts)
   {
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      (cl->*Pointer)(*std::move(opts)...);
+      (cl->*func)(*std::move(opts)...);
       return TCL_OK;
     }
     else
       return TCL_CONTINUE;
   }
 
-
   template<std::size_t ... Idx>
-  static int invoke(Class *cl,
-                    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
-                    std::index_sequence<Idx...> seq = {})
+  static int invoke(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
+                    std::index_sequence<0u, Idx...> seq = {})
   {
-    return invoke_impl(cl, interp,
-                       try_cast<type<Idx>>(interp, objv[Idx + 1])...);
+    return invoke_impl(
+        interp, std::is_void<return_type>{},
+        static_cast<typename std::remove_reference_t<class_type> *>(objv[0]->internalRep.twoPtrValue.ptr1),
+        try_cast<type<Idx>>(interp, objv[Idx + 1])...);
   }
 
-
   template<std::size_t ... Idx>
-  static int call_equal_impl(Class *cl,
-                             Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
-                             std::index_sequence<Idx...> seq = {})
+  static int call_equal_impl(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
+                             std::index_sequence<0u, Idx...> seq = {})
   {
+    int idxs[ sizeof ... (Idx)] = {Idx...};
     const bool all_equal = (is_equal_type<type<Idx>>(objv[Idx + 1]->typePtr) && ... );
     if (all_equal)
-      return invoke(cl, interp, objc, objv, seq);
+      return invoke(interp, objc, objv, seq);
     else
       return TCL_CONTINUE;
   }
 
-  static int call_equal(Class *cl,Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
+  static int call_equal(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
-    return call_equal_impl(cl, interp, objc-1, objv+1, seq);
+    auto cc = cnt ;
+    if (objc != (cnt + 1))
+      return TCL_CONTINUE;
+    return call_equal_impl(interp, objc, objv, seq);
+  }
+
+  template<std::size_t ... Idx>
+  static int call_equivalent_impl(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
+                                  std::index_sequence<0u, Idx...> seq = {})
+  {
+    int idxs[ sizeof ... (Idx)] = {Idx...};
+    const bool all_equal = (is_equivalent_type<type<Idx>>(objv[Idx + 1]->typePtr) && ... );
+    if (all_equal)
+      return invoke(interp, objc, objv, seq);
+    else
+      return TCL_CONTINUE;
   }
 
   static int call_equivalent(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
-    return overload_traits<Return(Class&, Args...)>::call_equivalent(
-        +[](Class & cl, Args ... args)
-        {
-          return (cl.*Pointer)(static_cast<Args>(args)...);
-        }, interp, objc-1, objv+1);
+    if (objc != (cnt + 1))
+      return TCL_CONTINUE;
+    return call_equivalent_impl(interp, objc, objv, seq);
   }
 
   static int call_castable(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
-    return overload_traits<Return(Class&, Args...)>::call_castable(
-        +[](Class & cl, Args ... args)
-        {
-          return (cl.*Pointer)(static_cast<Args>(args)...);
-        }, interp, objc-1, objv+1);
+    if (objc != (cnt + 1))
+      return TCL_CONTINUE;
+    return try_invoke_no_string(interp, objc, objv, seq);
   }
 
   static int call_with_string(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
-    return overload_traits<Return(Class&, Args...)>::call_with_string(
-        +[](Class & cl, Args ... args)
-        {
-          return (cl.*Pointer)(static_cast<Args>(args)...);
-        }, interp, objc-1, objv+1);
+    if (objc != (cnt + 1))
+      return TCL_CONTINUE;
+    return invoke(interp, objc, objv, seq);
   }
 };
 
-
-template<typename Return, typename Class,  typename ... Args,
-    Return(Class::* Pointer)(Args...) const>
-struct member_overload_traits<Return(Class::* const)(Args...) const, Pointer>
-    : overload_traits<Return(const Class&, Args...)>
-{
-  typedef Return(Class::*function_type)(Args...);
-  constexpr static std::size_t cnt = sizeof...(Args);
-  constexpr static std::make_index_sequence<cnt> seq{};
-
-  template<std::size_t Idx>
-  using type = std::tuple_element_t<Idx, std::tuple<Args...>>;
-
-  template<typename ... Opts>
-  static int try_invoke_no_string_impl(const Class *cl,
-                                       std::enable_if_t<!std::is_void_v<decltype((cl->*Pointer)(*std::declval<Opts>()...))>,  Tcl_Interp> * interp,
-  Opts && ... opts)
-  {
-    const bool invocable = (!!opts && ...);
-    if (invocable)
-    {
-      auto res = (cl->*Pointer)(*std::move(opts)...);
-      auto obj = make_object(interp, std::move(res));
-      Tcl_SetObjResult(interp, obj.get());
-      return TCL_OK;
-    }
-    else
-      return TCL_CONTINUE;
-  }
-
-  template<typename ... Opts>
-  static int try_invoke_no_string_impl(const Class *cl,
-                                       std::enable_if_t<std::is_void_v<decltype((cl->*Pointer)(*std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-                                       Opts && ... opts)
-  {
-    const bool invocable = (!!opts && ...);
-    if (invocable)
-    {
-      (cl->*Pointer)(*std::move(opts)...);
-      return TCL_OK;
-    }
-    else
-      return TCL_CONTINUE;
-  }
-
-  template<std::size_t ... Idx>
-  static int try_invoke_no_string(const Class *cl,
-                                  Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
-                                  std::index_sequence<Idx...> seq = {})
-  {
-    return try_invoke_no_string_impl(
-        cl, interp,
-        // if you get an error you're missing some tag_invokes.
-        try_cast_without_implicit_string<type<Idx>>(interp, objv[Idx + 1])...);
-  }
-
-
-  template<typename ... Opts>
-  static int invoke_impl(const Class *cl,
-                         std::enable_if_t<!std::is_void_v<decltype((cl->*Pointer)(*std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-  Opts && ... opts)
-  {
-    const bool invocable = (!!opts && ...);
-    if (invocable)
-    {
-      auto res = (cl->*Pointer)(*std::move(opts)...);
-      auto obj = make_object(interp, std::move(res));
-      Tcl_SetObjResult(interp, obj.get());
-      return TCL_OK;
-    }
-    else
-      return TCL_CONTINUE;
-  }
-
-  template<typename ... Opts>
-  static int invoke_impl(const Class *cl,
-                         std::enable_if_t<std::is_void_v<decltype((cl->*Pointer)(*std::declval<Opts>()...))>, Tcl_Interp>  * interp,
-                         Opts && ... opts)
-  {
-    const bool invocable = (!!opts && ...);
-    if (invocable)
-    {
-      (cl->*Pointer)(*std::move(opts)...);
-      return TCL_OK;
-    }
-    else
-      return TCL_CONTINUE;
-  }
-
-
-  template<std::size_t ... Idx>
-  static int invoke(const Class *cl,
-                    Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
-                    std::index_sequence<Idx...> seq = {})
-  {
-    return invoke_impl(cl, interp,
-                       try_cast<type<Idx>>(interp, objv[Idx + 1])...);
-  }
-
-
-  template<std::size_t ... Idx>
-  static int call_equal_impl(const Class *cl,
-                             Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
-                             std::index_sequence<Idx...> seq = {})
-  {
-    const bool all_equal = (is_equal_type<type<Idx>>(objv[Idx + 1]->typePtr) && ... );
-    if (all_equal)
-      return invoke(cl, interp, objc, objv, seq);
-    else
-      return TCL_CONTINUE;
-  }
-
-  static int call_equal(const Class *cl,Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
-  {
-    return call_equal_impl(cl, interp, objc-1, objv+1, seq);
-  }
-
-  static int call_equivalent(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
-  {
-    return overload_traits<Return(const Class&, Args...)>::call_equivalent(
-        +[](const Class & cl, Args ... args)
-        {
-          return (cl.*Pointer)(static_cast<Args>(args)...);
-        }, interp, objc-1, objv+1);
-  }
-
-  static int call_castable(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
-  {
-    return overload_traits<Return(const Class&, Args...)>::call_castable(
-        +[](const Class & cl, Args ... args)
-        {
-          return (cl.*Pointer)(static_cast<Args>(args)...);
-        }, interp, objc-1, objv+1);
-  }
-
-  static int call_with_string(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
-  {
-    return overload_traits<Return(const Class&, Args...)>::call_with_string(
-        +[](const Class & cl, Args ... args)
-        {
-          return (cl.*Pointer)(static_cast<Args>(args)...);
-        }, interp, objc-1, objv+1);
-  }
-};
 
 }
 

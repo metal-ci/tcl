@@ -45,15 +45,12 @@ struct class_commands
 
     ~class_commands()
     {
-        printf("XYZ %p %p\n", interp, cmd);
-        //Tcl_DeleteCommandFromToken(interp, cmd);
+        Tcl_DeleteCommandFromToken(interp, cmd);
     }
 
     template<typename T>
     class_commands * dup(T* ptr, const char * name)
     {
-        printf("DUP %p %p\n", interp, cmd);
-
         if (make)
             return make(ptr, interp, name);
         else

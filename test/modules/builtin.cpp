@@ -8,6 +8,7 @@
 #include <boost/tcl/builtin.hpp>
 #include <boost/tcl/package.hpp>
 #include <boost/tcl/command.hpp>
+#include <boost/tcl/builtin/bignum.hpp>
 
 
 BOOST_TCL_PACKAGE(Builtin, "1.0", mod)

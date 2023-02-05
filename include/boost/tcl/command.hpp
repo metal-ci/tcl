@@ -51,11 +51,8 @@ struct sub_command
     template<typename Class>
     inline sub_command & add_class()
     {
-        if constexpr(std::is_default_constructible_v<Class>)
-            add_constructor<Class()>();
-        if constexpr(std::is_copy_constructible_v<Class>)
-            add_constructor<Class(const Class &)>();
-
+        add_default_ctor<Class>(std::is_default_constructible<Class>{});
+        add_copy_ctor<Class>(std::is_copy_constructible<Class>{});
         mp11::mp_for_each<describe::describe_members<Class, describe::mod_static |
                                                             describe::mod_public>>(
             [this](auto t)
@@ -115,26 +112,37 @@ struct sub_command
 
         using call_t = int(void*, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[]);
         call_t * call_equal_,
-                * call_equivalent_,
-                * call_castable_,
-                * call_string_;
-        void * impl_;
+               * call_equivalent_,
+               * call_castable_,
+               * call_string_;
+
+        struct impl_deleter
+        {
+          void(*deleter_func)(void*) = nullptr;
+          void operator()(void * ptr)
+          {
+            if (deleter_func)
+                deleter_func(ptr);
+          }
+        };
+
+        std::unique_ptr<void, impl_deleter> impl_;
 
         int call_equal(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
         {
-            return call_equal_(impl_, interp, objc, objv);
+            return call_equal_(impl_.get(), interp, objc, objv);
         }
         int call_equivalent(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
         {
-            return call_equivalent_(impl_, interp, objc, objv);
+            return call_equivalent_(impl_.get(), interp, objc, objv);
         }
         int call_castable(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
         {
-            return call_castable_(impl_, interp, objc, objv);
+            return call_castable_(impl_.get(), interp, objc, objv);
         }
         int call_with_string(Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
         {
-            return call_string_(impl_, interp, objc, objv);
+            return call_string_(impl_.get(), interp, objc, objv);
         }
     };
     ~sub_command()
@@ -142,6 +150,16 @@ struct sub_command
 
     }
   private:
+
+    template<typename Class>
+    void add_default_ctor(std::false_type) {}
+    template<typename Class>
+    void add_default_ctor(std::true_type)  { add_constructor<Class()>(); }
+
+    template<typename Class>
+    void add_copy_ctor(std::false_type) {}
+    template<typename Class>
+    void add_copy_ctor(std::true_type)  { add_constructor<Class(const Class &)>(); }
 
     template<typename Class, typename ... Args>
     sub_command & add_constructor_impl_(Class(*)(Args...))
@@ -165,8 +183,8 @@ struct sub_command
                        &traits::call_equivalent,
                        &traits::call_castable,
                        &traits::call_with_string,
-                       reinterpret_cast<void*>(f)};
-        overloads_.push_back(ovl);
+                       std::unique_ptr<void, overload_t::impl_deleter>{reinterpret_cast<void*>(f), overload_t::impl_deleter{}}};
+        overloads_.push_back(std::move(ovl));
     }
 
     template<typename Func>
@@ -178,8 +196,8 @@ struct sub_command
                        &traits::call_equivalent,
                        &traits::call_castable,
                        &traits::call_with_string,
-                       reinterpret_cast<void*>(f)};
-        overloads_.push_back(ovl);
+                       std::unique_ptr<void, overload_t::impl_deleter>{reinterpret_cast<void*>(f), overload_t::impl_deleter{}}};
+        overloads_.push_back(std::move(ovl));
     }
 
   protected:
@@ -203,19 +221,19 @@ struct sub_command
                 auto candidates = adaptors::filter(overloads_,
                                                    [&](const overload_t &ovl) { return ovl.cnt == (objc - 1); });
 
-                for (auto can: candidates) // equal match
+                for (auto & can: candidates) // equal match
                     if (auto res = can.call_equal(interp, objc, objv); res != TCL_CONTINUE)
                         return res;
 
-                for (auto can: candidates) // equivalent match
+                for (auto & can: candidates) // equivalent match
                     if (auto res = can.call_equivalent(interp, objc, objv); res != TCL_CONTINUE)
                         return res;
 
-                for (auto can: candidates) // castable match
+                for (auto & can: candidates) // castable match
                     if (auto res = can.call_castable(interp, objc, objv); res != TCL_CONTINUE)
                         return res;
 
-                for (auto can: candidates) // string match
+                for (auto & can: candidates) // string match
                     if (auto res = can.call_with_string(interp, objc, objv); res != TCL_CONTINUE)
                         return res;
             }
@@ -343,7 +361,7 @@ try
             {
                 using traits = member_overload_traits<decltype(d.pointer), d.pointer>;
                 if (d.name == cmd && res == TCL_CONTINUE)
-                    res = traits::call_equal(p, interp, objc, objv);
+                    res = traits::call_equal(interp, objc, objv);
             });
     if (res != TCL_CONTINUE)
         return res;
@@ -398,7 +416,6 @@ catch (...) {
 template<typename T>
 class_commands * make_class_command(T* ptr, Tcl_Interp * interp, const char * name)
 {
-    printf("Creating command '%s'\n", name);
     std::string nm = "*";
     nm += name;
     auto res = new class_commands{
@@ -406,15 +423,12 @@ class_commands * make_class_command(T* ptr, Tcl_Interp * interp, const char * na
           Tcl_CreateObjCommand(interp, nm.c_str()/*, name*/, &class_command_impl<T>, ptr,
                                [](void * p)
                                {
-                                    printf("Delete ct %p\n", p);
+                                    delete static_cast<T*>(p);
                                }),
           +[](void *ptr, Tcl_Interp * interp, const char * name)
           {
-                return make_class_command(static_cast<T*>(ptr), interp, name);
+              return make_class_command(static_cast<T*>(ptr), interp, name);
           }};
-    Tcl_CmdInfo ci;
-    Tcl_GetCommandInfo(interp, name, &ci);
-
     return res;
 }
 
