@@ -27,7 +27,7 @@ struct overload_traits
 
   constexpr static std::size_t cnt = std::tuple_size<args_type>::value;
   constexpr static std::make_index_sequence<cnt> seq{};
-  using function_type = boost::callable_traits::function_type_t<Func>*;
+  using function_type = Func*;
 
   template<std::size_t Idx>
   using type = std::tuple_element_t<Idx, args_type>;
@@ -39,7 +39,7 @@ struct overload_traits
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      auto res = func(*std::move(opts)...);
+      auto res = (*func)(*std::move(opts)...);
       auto obj = make_object(interp, std::move(res));
       Tcl_SetObjResult(interp, obj.get());
       return TCL_OK;
@@ -55,7 +55,7 @@ struct overload_traits
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      func(*std::move(opts)...);
+      (*func)(*std::move(opts)...);
       return TCL_OK;
     }
     else
@@ -82,7 +82,7 @@ struct overload_traits
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      auto res = func(*std::move(opts)...);
+      auto res = (*func)(*std::move(opts)...);
       auto obj = make_object(interp, std::move(res));
       Tcl_SetObjResult(interp, obj.get());
 
@@ -101,7 +101,7 @@ struct overload_traits
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      func(*std::move(opts)...);
+      (*func)(*std::move(opts)...);
       return TCL_OK;
     }
     else
@@ -178,7 +178,7 @@ struct overload_traits_with_interp
 
   constexpr static std::size_t cnt = std::tuple_size<args_type>::value;
   constexpr static std::make_index_sequence<cnt> seq{};
-  using function_type = boost::callable_traits::function_type_t<Func>*;
+  using function_type = Func*;
 
   template<std::size_t Idx>
   using type = std::tuple_element_t<Idx, args_type>;
@@ -190,7 +190,7 @@ struct overload_traits_with_interp
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      auto res = func(interp, *std::move(opts)...);
+      auto res = (*func)(interp, *std::move(opts)...);
       auto obj = make_object(interp, std::move(res));
       Tcl_SetObjResult(interp, obj.get());
       return TCL_OK;
@@ -206,7 +206,7 @@ struct overload_traits_with_interp
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      func(interp, *std::move(opts)...);
+      (*func)(interp, *std::move(opts)...);
       return TCL_OK;
     }
     else
@@ -230,7 +230,7 @@ struct overload_traits_with_interp
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      auto res = func(interp, *std::move(opts)...);
+      auto res = (*func)(interp, *std::move(opts)...);
       auto obj = make_object(interp, std::move(res));
       Tcl_SetObjResult(interp, obj.get());
       return TCL_OK;
@@ -246,7 +246,7 @@ struct overload_traits_with_interp
     const bool invocable = (!!opts && ...);
     if (invocable)
     {
-      func(interp, *std::move(opts)...);
+      (*func)(interp, *std::move(opts)...);
       return TCL_OK;
     }
     else
