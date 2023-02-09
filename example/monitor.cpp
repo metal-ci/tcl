@@ -20,7 +20,7 @@ tcl::interpreter_ptr make()
   auto ip = tcl::make_interpreter();
   tcl::create_command(ip, "status")
       .add_function_with_interp(
-          +[](Tcl_Interp * interp) -> boost::core::string_view
+          [](Tcl_Interp * interp) -> boost::core::string_view
           {
             return "Diagnostics: this is still a minimal program that ain't doing much, so all is good";
           });

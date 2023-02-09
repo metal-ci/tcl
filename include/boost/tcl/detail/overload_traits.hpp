@@ -27,7 +27,7 @@ struct overload_traits
 
   constexpr static std::size_t cnt = std::tuple_size<args_type>::value;
   constexpr static std::make_index_sequence<cnt> seq{};
-  using function_type = Func*;
+  using function_type = std::remove_pointer_t<Func>*;
 
   template<std::size_t Idx>
   using type = std::tuple_element_t<Idx, args_type>;
@@ -121,7 +121,7 @@ struct overload_traits
   static int call_equal_impl(function_type func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
                              std::index_sequence<Idx...> seq = {})
   {
-    const bool all_equal = (is_equal_type<type<Idx>>(objv[Idx + 1]->typePtr) && ... );
+    const bool all_equal = (is_equal_type<type<Idx>>(interp, objv[Idx + 1]) && ... );
     if (all_equal)
       return invoke(func, interp, objc, objv, seq);
     else
@@ -133,6 +133,12 @@ struct overload_traits
     const auto p = reinterpret_cast<function_type>(func);
     BOOST_ASSERT(objc == cnt + 1);
     return call_equal_impl(p, interp, objc, objv, seq);
+  }
+
+  static int call_equal(function_type func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
+  {
+    BOOST_ASSERT(objc == cnt + 1);
+    return call_equal_impl(func, interp, objc, objv, seq);
   }
 
   template<std::size_t ... Idx>
@@ -153,6 +159,12 @@ struct overload_traits
     return call_equivalent_impl(p, interp, objc, objv, seq);
   }
 
+  static int call_equivalent(function_type func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
+  {
+    BOOST_ASSERT(objc == cnt + 1);
+    return call_equivalent_impl(func, interp, objc, objv, seq);
+  }
+
   static int call_castable(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
     const auto p = reinterpret_cast<function_type>(func);
@@ -160,11 +172,23 @@ struct overload_traits
     return try_invoke_no_string(p, interp, objc, objv, seq);
   }
 
+  static int call_castable(function_type func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
+  {
+    BOOST_ASSERT(objc == cnt + 1);
+    return try_invoke_no_string(func, interp, objc, objv, seq);
+  }
+
   static int call_with_string(void * func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
   {
     const auto p = reinterpret_cast<function_type>(func);
     BOOST_ASSERT(objc == cnt + 1);
     return invoke(p, interp, objc, objv, seq);
+  }
+
+  static int call_with_string(function_type func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[])
+  {
+    BOOST_ASSERT(objc == cnt + 1);
+    return invoke(func, interp, objc, objv, seq);
   }
 };
 
@@ -267,7 +291,7 @@ struct overload_traits_with_interp
   static int call_equal_impl(function_type func, Tcl_Interp * interp, int objc, Tcl_Obj * const objv[],
                              std::index_sequence<Idx...> seq = {})
   {
-    const bool all_equal = (is_equal_type<type<Idx>>(objv[Idx + 1]->typePtr) && ... );
+    const bool all_equal = (is_equal_type<type<Idx>>(interp, objv[Idx + 1]) && ... );
     if (all_equal)
       return invoke(func, interp, objc, objv, seq);
     else
@@ -416,7 +440,7 @@ struct member_overload_traits
                              std::index_sequence<0u, Idx...> seq = {})
   {
     int idxs[ sizeof ... (Idx)] = {Idx...};
-    const bool all_equal = (is_equal_type<type<Idx>>(objv[Idx + 1]->typePtr) && ... );
+    const bool all_equal = (is_equal_type<type<Idx>>(interp, objv[Idx + 1]) && ... );
     if (all_equal)
       return invoke(interp, objc, objv, seq);
     else

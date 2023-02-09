@@ -27,16 +27,17 @@ catch (...)
     return TCL_ERROR;
 }
 
+extern Tcl_Interp *interp;
+
 TEST_CASE("exception")
 {
     {
-        auto ip = boost::tcl::make_interpreter();
-        Tcl_FindExecutable(doctest::getContextOptions()->binary_name.c_str());
-        CHECK(Tcl_Init(ip.get()) == TCL_OK);
-        Tcl_CreateObjCommand(ip.get(), "throw_test", throw_cmd, nullptr, nullptr);
+        Tcl_CreateObjCommand(interp, "throw_test", throw_cmd, nullptr, nullptr);
 
-        CHECK(Tcl_Eval(ip.get(), R"(throw_test)") == TCL_ERROR);
-        CHECK_THROWS_WITH(boost::tcl::throw_result(ip.get()), "test-error");
+        CHECK(Tcl_Eval(interp, R"(throw_test)") == TCL_ERROR);
+        CHECK_THROWS_WITH(boost::tcl::throw_result(interp), "test-error");
+
+        Tcl_DeleteCommand(interp, "throw_test");
 
     }
     Tcl_Finalize();

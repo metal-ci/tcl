@@ -5,52 +5,96 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#define USE_TCL_STUBS
+#include <tcl.h>
+#define USE_TCLOO_STUBS
+#include <tclOO.h>
+
+#include <dlfcn.h>
 #include "doctest.h"
-#include "boost/tcl/class.hpp"
+#include <boost/tcl/interpreter.hpp>
+#include <boost/tcl/builtin.hpp>
+#include <boost/tcl/object.hpp>
+
+
+#include <boost/tcl/class.hpp>
+#include <filesystem>
+
+extern Tcl_Interp *interp;
+
+using namespace boost;
+
+struct base
+{
+  int i = 12;
+  void test(int i)
+  {
+    i = 42;
+  }
+
+  int test()
+  {
+    return i;
+  }
+  void do_the_thing()
+  {
+
+  }
+};
+
+BOOST_DESCRIBE_STRUCT(base, (), (i, (int()) test, (void (int)) test, do_the_thing));
+
+struct test_class : base
+{
+
+  int j;
+  test_class(int i) : j(i)
+  {
+    printf("test_class(i=%d, %p)\n", i, this);
+  }
+  ~test_class()
+  {
+    printf("~test_class(%p)\n", this);
+  }
+
+  test_class(const test_class &tc) : base(tc), j(j)
+  {
+    printf("test_class(const & test_class = %p) from %p\n", &tc, this);
+  }
+  static int static_i ;
+  static int s_get() { return static_i;}
+  static void s_set(int v) { static_i = v;}
+};
+
+int test_class::static_i = 100;
+
+
+BOOST_DESCRIBE_STRUCT(test_class, (base), (j, static_i, s_get, s_set));
+
+BOOST_TCL_DESCRIBE_CONSTRUCTORS(test_class, (int));
+
+extern Tcl_Interp *interp;
 
 TEST_SUITE_BEGIN("class");
 
-struct copyable {copyable(const copyable &) = default;} ;
-struct non_copyable {non_copyable(const non_copyable &) = delete;} ;
+BOOST_TCL_SET_CLASS_NAME(test_class, test-class);
 
-static_assert(boost::tcl::detail::duplicate_class<copyable>);
-static_assert(!boost::tcl::detail::duplicate_class<non_copyable>);
-
-struct foo {int i;};
-struct bar {int j;};
-
-struct foobar : foo, bar
-{
-    int k;
-};
-
-struct foobar_2 : foobar
-{
-    int l;
-};
-
-BOOST_DESCRIBE_STRUCT(foo, (), ());
-BOOST_DESCRIBE_STRUCT(bar, (), ());
-BOOST_DESCRIBE_STRUCT(foobar, (foo, bar), ());
-BOOST_DESCRIBE_STRUCT(foobar_2, (foobar), ());
+template< const char * const &Name> struct foobar {};
 
 TEST_CASE("cast")
 {
-    using boost::tcl::detail::invoke_describe_cast;
-    using boost::tcl::detail::invoke_describe_can_cast;
-    const auto impl = & boost::tcl::detail::describe_cast<foobar_2>;
-    const auto can_ = & boost::tcl::detail::describe_can_cast<foobar_2>;
-    foobar_2 fb;
+  auto & n = boost::tcl::detail::getMethodType<test_class>("foobar");
+  auto & ns = boost::tcl::detail::getStaticMethodType<test_class>("foobar");
 
-    CHECK(invoke_describe_can_cast<foobar*>(can_));
-    CHECK(invoke_describe_can_cast<foo*>(can_));
-    CHECK(invoke_describe_can_cast<bar*>(can_));
-    CHECK(!invoke_describe_can_cast<int*>(can_));
+  auto & xxx = boost::tcl::detail::constructorType<test_class>;
+  REQUIRE(Tcl_InitStubs(interp , TCL_VERSION ,0) != nullptr);
+  REQUIRE(Tcl_OOInitStubs(interp) != nullptr);
+  tcl::register_class<test_class>(interp);
 
-    CHECK(static_cast<foobar*>(&fb) == invoke_describe_cast<foobar*>(&fb, impl));
-    CHECK(static_cast<foo*>(&fb)    == invoke_describe_cast<foo*>(&fb, impl));
-    CHECK(static_cast<bar*>(&fb)    == invoke_describe_cast<bar*>(&fb, impl));
-    CHECK(nullptr                   == invoke_describe_cast<int*>(&fb, impl));
+  auto p = tcl::make_object(interp, test_class{2});
+
+  std::filesystem::path pt{__FILE__};
+  auto pp = pt.parent_path() / "class.tcl";
+  CHECK_MESSAGE(Tcl_EvalFile(interp, pp.string().c_str()) == TCL_OK, Tcl_GetStringResult(interp));
 }
-
 TEST_SUITE_END();

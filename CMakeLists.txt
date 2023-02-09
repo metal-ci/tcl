@@ -53,6 +53,7 @@ if (NOT BOOST_TCL_BUILD_INLINE)
 endif()
 
 find_package(TCL)
+find_package(TclStub)
 
 add_library(boost_tcl INTERFACE)
 target_include_directories(boost_tcl INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")

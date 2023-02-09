@@ -116,16 +116,23 @@ namespace detail
 {
 
 template<typename T>
-auto is_equal_type_impl(const Tcl_ObjType * type, detail::rank<1>)
-    -> decltype(tag_invoke(equal_type_tag<detail::arg_decay_t<T>>{}, *type))
+auto is_equal_type_impl(Tcl_Interp * interp, const Tcl_Obj * obj,detail::rank<2>)
+    -> decltype(tag_invoke(equal_type_tag<detail::arg_decay_t<T>>{}, interp, obj))
 {
-    if (type == nullptr)
-        return false;
-    return tag_invoke(equal_type_tag<detail::arg_decay_t<T>>{}, *type);
+    return tag_invoke(equal_type_tag<detail::arg_decay_t<T>>{}, interp, obj);
 }
 
 template<typename T>
-auto is_equal_type_impl(const Tcl_ObjType * type, detail::rank<0>)
+auto is_equal_type_impl(Tcl_Interp * interp, const Tcl_Obj * obj, detail::rank<1>)
+    -> decltype(tag_invoke(equal_type_tag<detail::arg_decay_t<T>>{}, *obj->typePtr))
+{
+    if (obj->typePtr == nullptr)
+        return false;
+    return tag_invoke(equal_type_tag<detail::arg_decay_t<T>>{}, *obj->typePtr);
+}
+
+template<typename T>
+auto is_equal_type_impl(Tcl_Interp * interp, const Tcl_Obj * type, detail::rank<0>)
 {
     return false;
 }
@@ -150,9 +157,9 @@ auto is_equivalent_type_impl(const Tcl_ObjType * type, detail::rank<0>)
 }
 
 template<typename T>
-bool is_equal_type(const Tcl_ObjType * type)
+bool is_equal_type(Tcl_Interp * interp, const Tcl_Obj * obj)
 {
-    return detail::is_equal_type_impl<T>(type, detail::rank<1>{});
+    return detail::is_equal_type_impl<T>(interp, obj, detail::rank<2>{});
 }
 
 

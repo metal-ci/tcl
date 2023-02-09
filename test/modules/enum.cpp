@@ -40,7 +40,7 @@ BOOST_TCL_PACKAGE(Enum, "1.0", mod)
 
             });
     cmd.add_function(
-            +[](test_t d)
+            [](test_t d)
             {
                 called  += 2;  assert(d == test);
                 return d;
