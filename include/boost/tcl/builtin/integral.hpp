@@ -142,14 +142,14 @@ inline std::optional<I> tag_invoke(
 }
 
 template<typename I>
-inline I tag_invoke(
+inline object_ptr tag_invoke(
         const convert_tag & tag,
-        Tcl_Interp*,
+        Tcl_Interp* interp,
         I i,
         std::enable_if_t<std::is_integral_v<I> && !std::is_enum_v<I>, I> * = nullptr)
 {
     using type = std::conditional_t<std::is_signed_v<I>, signed int, unsigned int>;
-    return tag_invoke(tag, static_cast<type>(i));
+    return tag_invoke(tag, interp, static_cast<type>(i));
 }
 
 
