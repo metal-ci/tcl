@@ -14,38 +14,36 @@
 
 #include <boost/tcl/exception.hpp>
 
-#define BOOST_TCL_PACKAGE(Pacakage, Version, Name)                                  \
-void Pacakage##_init_impl(Tcl_Interp *interp);                                      \
-extern "C" int DLLEXPORT Pacakage##_Init(Tcl_Interp *interp)                        \
-{                                                                                   \
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL)                              \
-        return TCL_ERROR;                                                           \
-                                                                                    \
-    if (Tcl_PkgProvide(interp, #Pacakage, Version) == TCL_ERROR)                    \
-        return TCL_ERROR;                                                           \
-    try                                                                             \
-    {                                                                               \
-        Pacakage##_init_impl(interp);                                               \
-    }                                                                               \
-    catch (...)                                                                     \
-    {                                                                               \
-        auto obj = boost::tcl::make_exception_object();                             \
-        Tcl_SetObjResult(interp, obj.get());                                        \
-        return TCL_ERROR;                                                           \
-    }                                                                               \
-    return TCL_OK;                                                                  \
-}                                                                                   \
-void Pacakage##_init_impl(Tcl_Interp *Name)
+#if defined (TCLOO_VERSION)
+#define BOOST_TCL_INIT_OO_STUBS() if (Tcl_OOInitStubs(interp) == nullptr) return TCL_ERROR;
+#else
+#define BOOST_TCL_INIT_OO_STUBS()
+#endif
+
+#define BOOST_TCL_PACKAGE(Package, Version, Name)                                  \
+void Package##_init_impl(Tcl_Interp *interp);                                      \
+extern "C" int DLLEXPORT Package##_Init(Tcl_Interp *interp)                        \
+{                                                                                  \
+    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == nullptr)                          \
+        return TCL_ERROR;                                                          \
+                                                                                   \
+    if (Tcl_PkgProvide(interp, #Package, Version) == TCL_ERROR)                    \
+        return TCL_ERROR;                                                          \
+    try                                                                            \
+    {                                                                              \
+        Package##_init_impl(interp);                                               \
+    }                                                                              \
+    catch (...)                                                                    \
+    {                                                                              \
+        auto obj = boost::tcl::make_exception_object();                            \
+        Tcl_SetObjResult(interp, obj.get());                                       \
+        return TCL_ERROR;                                                          \
+    }                                                                              \
+    return TCL_OK;                                                                 \
+}                                                                                  \
+void Package##_init_impl(Tcl_Interp *Name)
 
 
-namespace boost
-{
-namespace tcl
-{
-
-
-
-}
-}
+#undef BOOST_TCL_INIT_OO_STUBS
 
 #endif //BOOST_TCL_PACKAGE_HPP
