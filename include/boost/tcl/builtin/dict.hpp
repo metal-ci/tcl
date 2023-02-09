@@ -29,6 +29,8 @@ inline std::optional<Container> tag_invoke(
         decltype(tag_invoke(cast_tag<typename Container::key_type>{}, interp, val))* = nullptr)
 {
     Container  res;
+    if (val->length == 0)
+      return res;
     Tcl_Obj *key, *value;
     Tcl_DictSearch search;
     int done;
