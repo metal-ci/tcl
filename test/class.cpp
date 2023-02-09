@@ -83,10 +83,6 @@ template< const char * const &Name> struct foobar {};
 
 TEST_CASE("cast")
 {
-  auto & n = boost::tcl::detail::getMethodType<test_class>("foobar");
-  auto & ns = boost::tcl::detail::getStaticMethodType<test_class>("foobar");
-
-  auto & xxx = boost::tcl::detail::constructorType<test_class>;
   REQUIRE(Tcl_InitStubs(interp , TCL_VERSION ,0) != nullptr);
   REQUIRE(Tcl_OOInitStubs(interp) != nullptr);
   tcl::register_class<test_class>(interp);
