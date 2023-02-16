@@ -25,6 +25,7 @@ include::tcl/module.adoc[]
 include::tcl/embed.adoc[]
 include::tcl/builtin_types.adoc[]
 include::tcl/commands.adoc[]
+include::tcl/describe.adoc[]
 
 :leveloffset: -1
 

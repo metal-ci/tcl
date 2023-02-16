@@ -1,0 +1,59 @@
+## Custom types
+
+All custom types are provided based on boost.describe.
+
+### Enums
+
+```cpp
+enum foobar {foo = 1, bar};
+BOOST_DESCRIBE_ENUM(foobar, foo, bar);
+```
+
+The above will be available in tcl bindings as `equivalent`:
+
+```cpp
+boost::tcl::create_command(mod, "func")
+    .add_function(foobar fb) {printf("Done with fb\n");};
+```
+
+```tcl
+func bar # converts bar to the enum as value bar
+foo 1    # converts 1 fo the numerical values foo
+```
+
+Alternatively enum can also be defined as commands so that the
+type is `equal`.
+
+```cpp
+boost::tcl::create_command(mod, "foobar")
+                        .add_enum<foobar>();
+```
+
+```tcl
+# create a tcl value with the actual type
+set f1 [ foobar bar]
+# create a tcl value with the actual type
+set f2 [ foobar 1 ]
+```
+
+
+### Class
+
+Classes can be used similarly used through describe.
+It's using the OO facilities of TCL.
+
+```cpp
+struct test_struct { void func(); test_struct(int, int); };
+BOOST_DESCRIBE_STRUCT(test_struct, (), (func));
+
+// in the initiation function of the module
+tcL::register_class<test_struct>(interp);
+```
+
+Use the class
+
+```tcl
+set ts [test_struct new 1 2]
+$ts func
+```
+
