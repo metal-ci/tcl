@@ -85,9 +85,13 @@ struct thread
 namespace this_thread
 {
 
-thread::id id()
+inline thread::id id()
 {
   return Tcl_GetCurrentThread();
+}
+inline void queue_event(Tcl_Event * event, Tcl_QueuePosition position = TCL_QUEUE_TAIL)
+{
+  Tcl_QueueEvent(event, position);
 }
 
 }
