@@ -189,6 +189,30 @@ auto try_cast_without_implicit_string(Tcl_Interp * ip, Tcl_Obj * obj)
     return try_cast<T>(ip, obj);
 }
 
+template<typename T>
+inline std::optional<std::optional<T>>  tag_invoke(
+    cast_tag<std::optional<T>>,
+    Tcl_Interp * interp,
+    boost::intrusive_ptr<Tcl_Obj> val)
+{
+  if (!val || (val->typePtr == nullptr && val->length == 0))
+    return std::nullopt;
+  return cast<T>(cast_tag<T>{}, interp, std::move(val));
+}
+
+
+
+template<typename T>
+inline object_ptr tag_invoke(
+    const convert_tag & tag,
+    Tcl_Interp * interp,
+    const std::optional<T> & val)
+{
+  if (val)
+    return tag_invoke(tag, interp, *val);
+  else
+    return Tcl_NewObj();
+}
 
 }
 }

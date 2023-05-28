@@ -14,6 +14,7 @@
 #include "doctest.h"
 #include <boost/tcl/interpreter.hpp>
 #include <boost/tcl/builtin.hpp>
+#include <boost/tcl/eval.hpp>
 #include <boost/tcl/object.hpp>
 
 
@@ -91,6 +92,6 @@ TEST_CASE("cast")
 
   std::filesystem::path pt{__FILE__};
   auto pp = pt.parent_path() / "class.tcl";
-  CHECK_MESSAGE(Tcl_EvalFile(interp, pp.string().c_str()) == TCL_OK, Tcl_GetStringResult(interp));
+  tcl::eval_file(interp, pp.string().c_str());
 }
 TEST_SUITE_END();

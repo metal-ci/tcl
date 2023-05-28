@@ -5,13 +5,14 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
+#include <boost/tcl/exception.hpp>
 #include <boost/tcl/interpreter.hpp>
 #include <boost/tcl/object.hpp>
+#include <boost/tcl/eval.hpp>
 #include <string>
 #include <stdexcept>
 
 #include "doctest.h"
-#include "boost/tcl/exception.hpp"
 
 TEST_SUITE_BEGIN("error");
 
@@ -33,10 +34,7 @@ TEST_CASE("exception")
 {
     {
         Tcl_CreateObjCommand(interp, "throw_test", throw_cmd, nullptr, nullptr);
-
-        CHECK(Tcl_Eval(interp, R"(throw_test)") == TCL_ERROR);
-        CHECK_THROWS_WITH(boost::tcl::throw_result(interp), "test-error");
-
+        CHECK_THROWS_WITH(boost::tcl::eval(interp, R"(throw_test)"), "test-error");
         Tcl_DeleteCommand(interp, "throw_test");
 
     }

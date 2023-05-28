@@ -6,7 +6,7 @@
 //
 
 #include <boost/tcl/channel.hpp>
-#include <tcl.h>
+#include <boost/tcl/eval.hpp>
 #include <filesystem>
 
 #include <boost/beast/core/flat_buffer.hpp>
@@ -88,7 +88,7 @@ TEST_CASE("channel")
 
   std::filesystem::path pt{__FILE__};
   auto pp = pt.parent_path() / "channel.tcl";
-  CHECK_MESSAGE(Tcl_EvalFile(interp, pp.string().c_str()) == TCL_OK, Tcl_GetStringResult(interp));
+  CHECK_NOTHROW(boost::tcl::eval_file(interp, pp.string()));
 
   Tcl_UnregisterChannel(interp, chan);
 
