@@ -43,9 +43,10 @@ template<typename T>
 struct get_class_name_tag {};
 
 template<typename T>
-auto tag_invoke(boost::tcl::detail::get_class_name_tag<T>) -> std::string
+auto tag_invoke(boost::tcl::detail::get_class_name_tag<T>) -> core::string_view
 {
-  return boost::typeindex::type_id<T>().pretty_name();
+  static std::string name = boost::typeindex::type_id<T>().pretty_name();
+  return name;
 }
 
 #define BOOST_TCL_SET_CLASS_NAME(Type, Name) \

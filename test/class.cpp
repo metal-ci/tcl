@@ -58,7 +58,7 @@ struct test_class : base
     printf("~test_class(%p)\n", this);
   }
 
-  test_class(const test_class &tc) : base(tc), j(j)
+  test_class(const test_class &tc) : base(tc), j(tc.j)
   {
     printf("test_class(const & test_class = %p) from %p\n", &tc, this);
   }
