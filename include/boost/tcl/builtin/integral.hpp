@@ -36,7 +36,12 @@ inline std::optional<bool> tag_invoke(
         return std::nullopt;
 }
 
-inline object_ptr tag_invoke(const struct convert_tag &,  Tcl_Interp*, bool b)
+template<typename Bool>
+inline object_ptr tag_invoke(
+        const struct convert_tag &,
+        Tcl_Interp*,
+        Bool && b,
+        std::enable_if_t<std::is_same_v<Bool, bool>> * = nullptr)
 {
     return Tcl_NewBooleanObj(b);
 }
@@ -146,7 +151,7 @@ inline object_ptr tag_invoke(
         const convert_tag & tag,
         Tcl_Interp* interp,
         I i,
-        std::enable_if_t<std::is_integral_v<I> && !std::is_enum_v<I>, I> * = nullptr)
+        std::enable_if_t<std::is_integral_v<I> && !std::is_enum_v<I> && !std::is_same_v<I, bool>, I> * = nullptr)
 {
     using type = std::conditional_t<std::is_signed_v<I>, signed int, unsigned int>;
     return tag_invoke(tag, interp, static_cast<type>(i));
