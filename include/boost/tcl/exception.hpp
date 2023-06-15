@@ -11,12 +11,17 @@
 #include <boost/throw_exception.hpp>
 #include <boost/tcl/cast.hpp>
 #include <boost/tcl/object.hpp>
-#include <exception>
+
+#include <boost/system/result.hpp>
+#include <boost/utility/string_view.hpp>
+
 #include <tcl.h>
+
+#include <exception>
 #include <new>
 #include <cstring>
 #include <optional>
-#include <boost/utility/string_view.hpp>
+
 
 namespace boost::tcl
 {
@@ -118,6 +123,8 @@ BOOST_NORETURN inline void throw_result(const interpreter_ptr & interp)
   throw_result(interp.get());
 }
 
+template<typename T>
+using result = boost::system::result<T, object_ptr>;
 
 inline std::optional<std::exception_ptr> tag_invoke(
         cast_tag<std::exception_ptr>,
@@ -144,9 +151,20 @@ inline bool tag_invoke(
 {
     return & type == &exception_ptr_type;
 }
+}
 
+namespace boost
+{
 
+BOOST_NORETURN
+inline
+void throw_exception_from_error( const boost::intrusive_ptr<Tcl_Obj> & e,
+                                 boost::source_location const & loc )
+{
+  throw_exception(tcl::tcl_exception(e), loc);
+}
 
 }
+
 
 #endif //TCL_EXCEPTION_HPP
