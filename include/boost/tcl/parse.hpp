@@ -24,7 +24,10 @@ namespace boost::tcl
 
 struct parse_result : Tcl_Parse
 {
-  parse_result() = default;
+  parse_result() : Tcl_Parse()
+  {
+    tokenPtr = staticTokens;
+  }
   parse_result(const parse_result & ) noexcept = default;
   parse_result(parse_result && lhs) noexcept : Tcl_Parse{lhs}
   {

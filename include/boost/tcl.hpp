@@ -23,6 +23,7 @@
 #include <boost/tcl/interpreter.hpp>
 #include <boost/tcl/object.hpp>
 #include <boost/tcl/package.hpp>
+#include <boost/tcl/parse.hpp>
 #include <boost/tcl/string_command.hpp>
 #include <boost/tcl/thread.hpp>
 #include <boost/tcl/var.hpp>

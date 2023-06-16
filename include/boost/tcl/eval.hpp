@@ -40,8 +40,8 @@ result<T> eval(const interpreter_ptr & interp,
 
 
 template<typename T = object_ptr>
-result<T> eval(Tcl_Interp * interp,
-                span<Tcl_Token> tokens)
+result<T> eval_tokens(Tcl_Interp * interp,
+                      span<Tcl_Token> tokens)
 {
   auto res = Tcl_EvalTokensStandard(interp, tokens.data(), tokens.size());
   if (res != TCL_OK)
@@ -50,10 +50,10 @@ result<T> eval(Tcl_Interp * interp,
 }
 
 template<typename T = object_ptr>
-result<T> eval(const interpreter_ptr & interp,
-               span<Tcl_Token> tokens)
+result<T> eval_tokens(const interpreter_ptr & interp,
+                      span<Tcl_Token> tokens)
 {
-  return eval<T>(interp.get(), tokens);
+  return eval_tokens<T>(interp.get(), tokens);
 }
 
 
@@ -132,6 +132,74 @@ result<T> global_eval(const interpreter_ptr & interp,
 }
 
 
+template<>
+inline
+result<void> eval<void>(Tcl_Interp * interp,
+                        core::string_view script,
+                        int flags)
+{
+  auto res = Tcl_EvalEx(interp, script.data(), script.size(), flags);
+  if (res != TCL_OK)
+    return result<void>{system::in_place_error, Tcl_GetObjResult(interp)};;
+  return result<void>{system::in_place_value};
+}
+
+template<>
+inline
+result<void> eval_tokens(Tcl_Interp * interp,
+                         span<Tcl_Token> tokens)
+{
+  auto res = Tcl_EvalTokensStandard(interp, tokens.data(), tokens.size());
+  if (res != TCL_OK)
+    return result<void>{system::in_place_error, Tcl_GetObjResult(interp)};;
+  return result<void>{system::in_place_value};
+}
+
+template<>
+inline
+result<void> eval_file(Tcl_Interp * interp,
+                       const std::string & file,
+                       int flags)
+{
+  auto res = Tcl_EvalFile(interp, file.c_str());
+  if (res != TCL_OK)
+    return result<void>{system::in_place_error, Tcl_GetObjResult(interp)};;
+  return result<void>{system::in_place_value};
+}
+
+template<>
+inline
+result<void> eval_file(Tcl_Interp * interp,
+                       const char * file,
+                       int flags)
+{
+  auto res = Tcl_EvalFile(interp, file);
+  if (res != TCL_OK)
+    return result<void>{system::in_place_error, Tcl_GetObjResult(interp)};;
+  return result<void>{system::in_place_value};
+}
+
+template<>
+inline
+result<void> global_eval(Tcl_Interp * interp,
+                         const char * script)
+{
+  auto res = Tcl_GlobalEval(interp, script);
+  if (res != TCL_OK)
+    return result<void>{system::in_place_error, Tcl_GetObjResult(interp)};;
+  return result<void>{system::in_place_value};
+}
+
+template<>
+inline
+result<void> global_eval(Tcl_Interp * interp,
+                         const std::string & script)
+{
+  auto res = Tcl_GlobalEval(interp, script.c_str());
+  if (res != TCL_OK)
+    return result<void>{system::in_place_error, Tcl_GetObjResult(interp)};;
+  return result<void>{system::in_place_value};
+}
 
 }
 

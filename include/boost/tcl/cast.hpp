@@ -11,6 +11,7 @@
 #include <optional>
 #include <boost/tcl/object.hpp>
 #include <boost/tcl/interpreter.hpp>
+#include <boost/system/result.hpp>
 #include <boost/throw_exception.hpp>
 #include <boost/utility/string_view.hpp>
 
@@ -104,6 +105,17 @@ auto cast(Tcl_Interp * ip, const object_ptr & obj)
         throw_exception(std::bad_cast());
     return *std::move(res);
 }
+
+template<typename T>
+auto cast(const interpreter_ptr &ip, const object_ptr & obj)
+    -> std::remove_reference_t<decltype(*tag_invoke(cast_tag<detail::arg_decay_t<T>>{}, ip.get(), obj))>
+{
+  auto res = tag_invoke(cast_tag<detail::arg_decay_t<T>>{}, ip.get(), obj);
+  if (!res)
+    throw_exception(std::bad_cast());
+  return *std::move(res);
+}
+
 
 template<typename T>
 struct equal_type_tag{};
@@ -213,6 +225,7 @@ inline object_ptr tag_invoke(
   else
     return Tcl_NewObj();
 }
+
 
 }
 }

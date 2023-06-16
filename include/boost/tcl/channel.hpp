@@ -95,18 +95,18 @@ const Tcl_ChannelType channel_type{
       },
   /*.getHandleProc=*/detail::getHandleProcImpl<Impl>(detail::rank<1>{}),
   /*.close2Proc=*/+[](ClientData instanceData, Tcl_Interp *interp, int flags)
-              {
-                return static_cast<Impl*>(instanceData)->close(interp, flags);
-              },
+      {
+        return static_cast<Impl*>(instanceData)->close(interp, flags);
+      },
   /*.blockModeProc=*/+[](ClientData instanceData, int mode)
-              {
-                return static_cast<Impl*>(instanceData)->block_mode(mode == TCL_MODE_BLOCKING);
-              },
+      {
+        return static_cast<Impl*>(instanceData)->block_mode(mode == TCL_MODE_BLOCKING);
+      },
   /*.flushProc=*/detail::getFlushProc<Impl>(detail::rank<1>{}),
   /*.handlerProc=*/+[](ClientData instanceData, int interestMask)
-              {
-                return static_cast<Impl*>(instanceData)->handler(interestMask);
-              },
+      {
+        return static_cast<Impl*>(instanceData)->handler(interestMask);
+      },
   /*.wideSeekProc=*/+[](ClientData instanceData, Tcl_WideInt offset, int mode, int *errorCodePtr) -> Tcl_WideInt
   {
     return static_cast<Impl*>(instanceData)->seek(offset, mode, *errorCodePtr);
