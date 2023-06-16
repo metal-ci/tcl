@@ -97,7 +97,7 @@ struct cast_tag {};
 
 template<typename T>
 auto cast(Tcl_Interp * ip, const object_ptr & obj)
-    -> decltype(*tag_invoke(cast_tag<detail::arg_decay_t<T>>{}, ip, obj))
+    -> std::remove_reference_t<decltype(*tag_invoke(cast_tag<detail::arg_decay_t<T>>{}, ip, obj))>
 {
     auto res = tag_invoke(cast_tag<detail::arg_decay_t<T>>{}, ip, obj);
     if (!res)

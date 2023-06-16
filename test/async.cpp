@@ -27,10 +27,10 @@ TEST_CASE("async")
 {
   test_async ta;
   CHECK(!ta.called);
-  CHECK_NOTHROW(boost::tcl::eval(interp, "puts nothing"));
+  CHECK_NOTHROW(boost::tcl::eval(interp, "puts nothing").value());
   CHECK(!ta.called);
   ta.mark();
   CHECK(!ta.called);
-  CHECK_NOTHROW(boost::tcl::eval(interp, "puts someting"));
+  CHECK_NOTHROW(boost::tcl::eval(interp, "puts something").value());
   CHECK(ta.called);
 }
