@@ -22,7 +22,7 @@ struct foo
 
 // make a null type
 const Tcl_ObjType nullType {
-    "nullptr",
+    "null",
     nullptr, nullptr, nullptr, nullptr
 };
 
@@ -57,6 +57,9 @@ inline bool tag_invoke(
 {
   using boost::tcl::equivalent_type_tag;
   namespace json = boost::json;
+
+  if (&type == &nullType)
+    return true;
 
   return tag_invoke(equivalent_type_tag<json::string>{}, type)
       || tag_invoke(equivalent_type_tag<json::object>{}, type)
@@ -96,6 +99,20 @@ inline std::optional<boost::json::value> tag_invoke(
   return std::nullopt;
 }
 
+
+inline std::optional<std::nullptr_t> tag_invoke(
+    boost::tcl::cast_tag<std::nullptr_t>,
+    Tcl_Interp * interp, boost::intrusive_ptr<Tcl_Obj> val)
+{
+  using namespace boost::tcl;
+  namespace json = boost::json;
+  if (!val || val->typePtr == &nullType ||
+      (val->typePtr == nullptr && val->length == 0))
+    return nullptr;
+
+  return std::nullopt;
+}
+
 template<typename T>
 auto serialize_func = static_cast<std::string(*)(const T &)>(&boost::json::serialize);
 
@@ -108,21 +125,21 @@ BOOST_TCL_PACKAGE(Json, "1.0", mod)
         return boost::json::parse(sv);
       });
 
-  boost::tcl::create_command(mod, "json::null").add_function(
-      [](boost::json::string_view sv)
-      {
-        return boost::json::parse(sv);
-      });
-
+  boost::tcl::set(mod, "json::null", nullptr);
   boost::tcl::create_command(mod, "json::serialize")
-      .add_function(
-        [](boost::json::string_view v)
-        {
-          return boost::json::serialize(v);
-        })
       .add_function(serialize_func<json::value>)
       .add_function(serialize_func<json::array>)
       .add_function(serialize_func<json::object>)
       .add_function(serialize_func<json::string>)
+      .add_function(
+          [](std::nullptr_t) -> std::string
+          {
+            return "null";
+          })
+      .add_function(
+          [](boost::core::string_view v)
+          {
+            return boost::json::serialize(v);
+          })
       ;
 }
