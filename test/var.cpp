@@ -5,9 +5,9 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/tcl/var.hpp>
-#include <boost/tcl/eval.hpp>
-#include <boost/tcl/builtin/integral.hpp>
+#include <tclbind/var.hpp>
+#include <tclbind/eval.hpp>
+#include <tclbind/builtin/integral.hpp>
 #include <boost/asio.hpp>
 
 #include "doctest.h"
@@ -15,6 +15,8 @@
 using namespace boost;
 
 extern Tcl_Interp *interp;
+
+namespace tcl = tclbind;
 
 TEST_CASE("var")
 {

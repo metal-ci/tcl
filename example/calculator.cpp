@@ -8,8 +8,8 @@
 
 // simple CLI that's just a calculator
 
-#include <boost/tcl.hpp>
-#include <boost/tcl/builtin/bignum.hpp>
+#include <tclbind.hpp>
+#include <tclbind/builtin/bignum.hpp>
 
 template<typename T> T add(T x, T y) {return x + y;}
 template<typename T> T sub(T x, T y) {return x - y;}
@@ -23,7 +23,7 @@ template<typename T> T div(T x, T y)
 
 int main(int argc, char *argv[])
 {
-  namespace tcl = boost::tcl;
+  namespace tcl = tclbind;
   auto ip = tcl::make_interpreter();
 
   tcl::create_command(ip, "add")

@@ -5,15 +5,15 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/tcl/builtin.hpp>
-#include <boost/tcl/package.hpp>
-#include <boost/tcl/string_command.hpp>
-#include <boost/tcl/builtin/bignum.hpp>
+#include <tclbind/builtin.hpp>
+#include <tclbind/package.hpp>
+#include <tclbind/string_command.hpp>
+#include <tclbind/builtin/bignum.hpp>
 
 
-BOOST_TCL_PACKAGE(Unknown, "1.0", mod)
+TCLBIND_PACKAGE(Unknown, "1.0", mod)
 {
-  boost::tcl::create_string_command(
+  tclbind::create_string_command(
       mod, "unknown",
       [](int argc, const char * argv[])
       {

@@ -5,13 +5,13 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/tcl/parse.hpp>
+#include <tclbind/parse.hpp>
 
 #include "doctest.h"
 
 extern Tcl_Interp *interp;
 
-using namespace boost;
+namespace tcl = tclbind;
 
 TEST_CASE("parse-command")
 {

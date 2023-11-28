@@ -1,40 +1,40 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(BOOST_TCL_VERSION 1)
+set(TCLBIND_VERSION 1)
 if(BOOST_SUPERPROJECT_VERSION)
-    set(BOOST_TCL_VERSION ${BOOST_SUPERPROJECT_VERSION})
+    set(TCLBIND_VERSION ${BOOST_SUPERPROJECT_VERSION})
 endif()
 
-project(boost_tcl VERSION "${BOOST_TCL_VERSION}" LANGUAGES CXX)
+project(boost_tcl VERSION "${TCLBIND_VERSION}" LANGUAGES CXX)
 
-set(BOOST_TCL_IS_ROOT OFF)
+set(TCLBIND_IS_ROOT OFF)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    set(BOOST_TCL_IS_ROOT ON)
+    set(TCLBIND_IS_ROOT ON)
 endif()
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../../boost.css)
-    set(BOOST_TCL_SHOULD_BE_INLINE ON)
+    set(TCLBIND_SHOULD_BE_INLINE ON)
 else()
-    set(BOOST_TCL_SHOULD_BE_INLINE OFF)
+    set(TCLBIND_SHOULD_BE_INLINE OFF)
 endif()
 
-option(BOOST_TCL_BUILD_INLINE "Configure as if part of the boost source tree" ${BOOST_TCL_SHOULD_BE_INLINE})
+option(TCLBIND_BUILD_INLINE "Configure as if part of the boost source tree" ${TCLBIND_SHOULD_BE_INLINE})
 
 
-if(BOOST_TCL_IS_ROOT)
+if(TCLBIND_IS_ROOT)
     include(CTest)
 endif()
 if(NOT BOOST_SUPERPROJECT_VERSION)
-    option(BOOST_TCL_INSTALL "Install boost::tcl files" ON)
-    option(BOOST_TCL_BUILD_TESTS "Build boost::tcl tests" ${BUILD_TESTING})
-    option(BOOST_TCL_BUILD_EXAMPLES "Build boost::tcl examples" ${BOOST_TCL_IS_ROOT})
+    option(TCLBIND_INSTALL "Install tclbind files" ON)
+    option(TCLBIND_BUILD_TESTS "Build tclbind tests" ${BUILD_TESTING})
+    option(TCLBIND_BUILD_EXAMPLES "Build tclbind examples" ${TCLBIND_IS_ROOT})
 else()
-    set(BOOST_TCL_BUILD_TESTS ${BUILD_TESTING})
+    set(TCLBIND_BUILD_TESTS ${BUILD_TESTING})
 endif()
 
 
-if(BOOST_TCL_IS_ROOT AND BOOST_TCL_BUILD_INLINE)
+if(TCLBIND_IS_ROOT AND TCLBIND_BUILD_INLINE)
     #
     # Building inside Boost tree, but as a separate project e.g. on Travis or
     # other CI, or when producing Visual Studio Solution and Projects.
@@ -47,7 +47,7 @@ if(BOOST_TCL_IS_ROOT AND BOOST_TCL_BUILD_INLINE)
     unset(CMAKE_FOLDER)
 endif()
 
-if (NOT BOOST_TCL_BUILD_INLINE)
+if (NOT TCLBIND_BUILD_INLINE)
     find_package(Boost REQUIRED system json)
     include_directories(include)
 endif()
@@ -59,7 +59,7 @@ add_library(boost_tcl INTERFACE)
 target_include_directories(boost_tcl INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 add_library(Boost::tcl ALIAS boost_tcl)
 
-if(BOOST_TCL_INSTALL AND NOT BOOST_SUPERPROJECT_VERSION)
+if(TCLBIND_INSTALL AND NOT BOOST_SUPERPROJECT_VERSION)
     install(TARGETS boost_tcl
             RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
             LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -68,11 +68,11 @@ if(BOOST_TCL_INSTALL AND NOT BOOST_SUPERPROJECT_VERSION)
 endif()
 
 
-if(BOOST_TCL_BUILD_TESTS)
+if(TCLBIND_BUILD_TESTS)
     add_subdirectory(test)
 endif()
 
 
-if(BOOST_TCL_BUILD_EXAMPLES)
+if(TCLBIND_BUILD_EXAMPLES)
     add_subdirectory(example)
 endif()

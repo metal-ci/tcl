@@ -5,7 +5,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/tcl/allocator.hpp>
+#include <tclbind/allocator.hpp>
 #include <string>
 
 #include "doctest.h"
@@ -14,7 +14,7 @@ TEST_SUITE_BEGIN("allocator");
 
 TEST_CASE("alloc")
 {
-    std::basic_string<char, std::char_traits<char>, boost::tcl::allocator<char>> str;
+    std::basic_string<char, std::char_traits<char>, tclbind::allocator<char>> str;
 
     for (auto i = 0; i < 1000; i++)
         str += "xyz ";

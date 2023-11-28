@@ -5,15 +5,15 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/tcl/builtin.hpp>
-#include <boost/tcl/package.hpp>
-#include <boost/tcl/command.hpp>
-#include <boost/tcl/builtin/bignum.hpp>
+#include <tclbind/builtin.hpp>
+#include <tclbind/package.hpp>
+#include <tclbind/command.hpp>
+#include <tclbind/builtin/bignum.hpp>
 
 
-BOOST_TCL_PACKAGE(Builtin, "1.0", mod)
+TCLBIND_PACKAGE(Builtin, "1.0", mod)
 {
-    auto & cmd = boost::tcl::create_command(mod, "test-num");
+    auto & cmd = tclbind::create_command(mod, "test-num");
 
     static int called = 0;
 
@@ -21,10 +21,10 @@ BOOST_TCL_PACKAGE(Builtin, "1.0", mod)
     cmd.add_function(+[](double d)              {called  += 2;  assert(d == 3.142);   return d;});
     cmd.add_function(+[](boost::string_view sv) {called  += 4;  assert(sv == "f123"); return sv;});
     cmd.add_function(+[](bool v)                {called  += 8;  assert(v  == true);   return v;});
-    cmd.add_function(+[](boost::tcl::bignum v)
+    cmd.add_function(+[](tclbind::bignum v)
             {
                 called  += 16;
-                assert(v  == boost::tcl::bignum(42) * 1000000 * 1000000 * 1000000);
+                assert(v  == tclbind::bignum(42) * 1000000 * 1000000 * 1000000);
                 return v;
             });
     cmd.add_function(+[](boost::span<unsigned char> b)

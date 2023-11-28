@@ -12,13 +12,13 @@
 
 #include <dlfcn.h>
 #include "doctest.h"
-#include <boost/tcl/interpreter.hpp>
-#include <boost/tcl/builtin.hpp>
-#include <boost/tcl/eval.hpp>
-#include <boost/tcl/object.hpp>
+#include <tclbind/interpreter.hpp>
+#include <tclbind/builtin.hpp>
+#include <tclbind/eval.hpp>
+#include <tclbind/object.hpp>
 
 
-#include <boost/tcl/class.hpp>
+#include <tclbind/class.hpp>
 #include <filesystem>
 
 extern Tcl_Interp *interp;
@@ -72,13 +72,13 @@ int test_class::static_i = 100;
 
 BOOST_DESCRIBE_STRUCT(test_class, (base), (j, static_i, s_get, s_set));
 
-BOOST_TCL_DESCRIBE_CONSTRUCTORS(test_class, (int));
+TCLBIND_DESCRIBE_CONSTRUCTORS(test_class, (int));
 
 extern Tcl_Interp *interp;
 
 TEST_SUITE_BEGIN("class");
 
-BOOST_TCL_SET_CLASS_NAME(test_class, test-class);
+TCLBIND_SET_CLASS_NAME(test_class, test-class);
 
 template< const char * const &Name> struct foobar {};
 
@@ -86,12 +86,12 @@ TEST_CASE("cast")
 {
   REQUIRE(Tcl_InitStubs(interp , TCL_VERSION ,0) != nullptr);
   REQUIRE(Tcl_OOInitStubs(interp) != nullptr);
-  tcl::register_class<test_class>(interp);
+  tclbind::register_class<test_class>(interp);
 
-  auto p = tcl::make_object(interp, test_class{2});
+  auto p = tclbind::make_object(interp, test_class{2});
 
   std::filesystem::path pt{__FILE__};
   auto pp = pt.parent_path() / "class.tcl";
-  tcl::eval_file(interp, pp.string().c_str());
+  tclbind::eval_file(interp, pp.string().c_str());
 }
 TEST_SUITE_END();

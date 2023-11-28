@@ -5,19 +5,19 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/tcl/builtin.hpp>
-#include <boost/tcl/package.hpp>
-#include <boost/tcl/command.hpp>
-#include <boost/tcl/enum.hpp>
+#include <tclbind/builtin.hpp>
+#include <tclbind/package.hpp>
+#include <tclbind/command.hpp>
+#include <tclbind/enum.hpp>
 
 
 enum foobar { foo = 1, bar };
 BOOST_DESCRIBE_ENUM(foobar, foo, bar);
 BOOST_DEFINE_ENUM(test_t, test, test2);
 
-BOOST_TCL_PACKAGE(Enum, "1.0", mod)
+TCLBIND_PACKAGE(Enum, "1.0", mod)
 {
-    auto & cmd_base = boost::tcl::create_command(mod, "enum");
+    auto & cmd_base = tclbind::create_command(mod, "enum");
 
     auto & cmd = cmd_base.add_subcommand("test");
     static int called = 0;

@@ -5,14 +5,14 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/tcl/event.hpp>
-#include <boost/tcl/eval.hpp>
+#include <tclbind/event.hpp>
+#include <tclbind/eval.hpp>
 
 #include "doctest.h"
 
 extern Tcl_Interp *interp;
 
-struct test_event_source : boost::tcl::event_source
+struct test_event_source : tclbind::event_source
 {
   bool fired = false;
   void setup(int flags)
@@ -30,7 +30,7 @@ struct test_event_source : boost::tcl::event_source
 
     fprintf(stderr, "check(%d)\n", flags);
     Tcl_QueueEvent(
-        new boost::tcl::event(
+        new tclbind::event(
             [](int flags)
             {
               Tcl_SetVar(interp, "foobar", "done", 0);
@@ -44,5 +44,5 @@ struct test_event_source : boost::tcl::event_source
 TEST_CASE("event")
 {
   test_event_source te;
-  CHECK_NOTHROW(boost::tcl::eval(interp, "vwait foobar"));
+  CHECK_NOTHROW(tclbind::eval(interp, "vwait foobar"));
 }

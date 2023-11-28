@@ -5,7 +5,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/tcl.hpp>
+#include <tclbind.hpp>
 #include <boost/json.hpp>
 #include <boost/json/src.hpp>
 
@@ -14,9 +14,9 @@ struct foo
   Tcl_Interp* interp;
 
   template<typename T>
-  auto operator()(const T & val) -> boost::tcl::object_ptr
+  auto operator()(const T & val) -> tclbind::object_ptr
   {
-    return boost::tcl::make_object(interp, val);
+    return tclbind::make_object(interp, val);
   }
 };
 
@@ -26,7 +26,7 @@ const Tcl_ObjType nullType {
     nullptr, nullptr, nullptr, nullptr
 };
 
-inline boost::tcl::object_ptr tag_invoke(const boost::tcl::convert_tag &, Tcl_Interp*, std::nullptr_t )
+inline tclbind::object_ptr tag_invoke(const tclbind::convert_tag &, Tcl_Interp*, std::nullptr_t )
 {
   auto obj = Tcl_NewObj();
   static char null[5] = "null";
@@ -36,14 +36,14 @@ inline boost::tcl::object_ptr tag_invoke(const boost::tcl::convert_tag &, Tcl_In
   return obj;
 }
 
-inline boost::tcl::object_ptr tag_invoke(const boost::tcl::convert_tag &,
+inline tclbind::object_ptr tag_invoke(const tclbind::convert_tag &,
                                          Tcl_Interp* interp,
                                          const boost::json::string & str)
 {
   return Tcl_NewStringObj(str.data(), str.size());
 }
 
-inline boost::tcl::object_ptr tag_invoke(const boost::tcl::convert_tag &,
+inline tclbind::object_ptr tag_invoke(const tclbind::convert_tag &,
                                          Tcl_Interp* interp,
                                          const boost::json::value & value)
 {
@@ -52,10 +52,10 @@ inline boost::tcl::object_ptr tag_invoke(const boost::tcl::convert_tag &,
 }
 
 inline bool tag_invoke(
-    const boost::tcl::equivalent_type_tag<boost::json::value> & tag,
+    const tclbind::equivalent_type_tag<boost::json::value> & tag,
     const Tcl_ObjType & type)
 {
-  using boost::tcl::equivalent_type_tag;
+  using tclbind::equivalent_type_tag;
   namespace json = boost::json;
 
   if (&type == &nullType)
@@ -72,10 +72,10 @@ inline bool tag_invoke(
 
 
 inline std::optional<boost::json::value> tag_invoke(
-    boost::tcl::cast_tag<boost::json::value>,
+    tclbind::cast_tag<boost::json::value>,
     Tcl_Interp * interp, boost::intrusive_ptr<Tcl_Obj> val)
 {
-  using namespace boost::tcl;
+  using namespace tclbind;
   namespace json = boost::json;
   if (!val || val->typePtr == &nullType)
     return nullptr;
@@ -92,7 +92,7 @@ inline std::optional<boost::json::value> tag_invoke(
   if (is_equivalent_type<std::uint64_t>(val->typePtr))
     return try_cast<std::uint64_t>(interp, val.get());
 
-  auto ss = boost::tcl::try_cast_without_implicit_string<json::string>(interp, val.get());
+  auto ss = tclbind::try_cast_without_implicit_string<json::string>(interp, val.get());
   if (ss)
     return std::move(*ss);
 
@@ -101,10 +101,10 @@ inline std::optional<boost::json::value> tag_invoke(
 
 
 inline std::optional<std::nullptr_t> tag_invoke(
-    boost::tcl::cast_tag<std::nullptr_t>,
+    tclbind::cast_tag<std::nullptr_t>,
     Tcl_Interp * interp, boost::intrusive_ptr<Tcl_Obj> val)
 {
-  using namespace boost::tcl;
+  using namespace tclbind;
   namespace json = boost::json;
   if (!val || val->typePtr == &nullType ||
       (val->typePtr == nullptr && val->length == 0))
@@ -116,17 +116,17 @@ inline std::optional<std::nullptr_t> tag_invoke(
 template<typename T>
 auto serialize_func = static_cast<std::string(*)(const T &)>(&boost::json::serialize);
 
-BOOST_TCL_PACKAGE(Json, "1.0", mod)
+TCLBIND_PACKAGE(Json, "1.0", mod)
 {
   using namespace boost;
-  boost::tcl::create_command(mod, "json::parse").add_function(
+  tclbind::create_command(mod, "json::parse").add_function(
       [](boost::json::string_view sv)
       {
         return boost::json::parse(sv);
       });
 
-  boost::tcl::set(mod, "json::null", nullptr);
-  boost::tcl::create_command(mod, "json::serialize")
+  tclbind::set(mod, "json::null", nullptr);
+  tclbind::create_command(mod, "json::serialize")
       .add_function(serialize_func<json::value>)
       .add_function(serialize_func<json::array>)
       .add_function(serialize_func<json::object>)

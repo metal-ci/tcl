@@ -5,14 +5,14 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <boost/tcl/async.hpp>
-#include <boost/tcl/eval.hpp>
+#include <tclbind/async.hpp>
+#include <tclbind/eval.hpp>
 
 #include "doctest.h"
 
 extern Tcl_Interp *interp;
 
-struct test_async : boost::tcl::async
+struct test_async : tclbind::async
 {
   bool called = false;
   int invoke(Tcl_Interp * interp, int code) override
@@ -27,10 +27,10 @@ TEST_CASE("async")
 {
   test_async ta;
   CHECK(!ta.called);
-  CHECK_NOTHROW(boost::tcl::eval(interp, "puts nothing").value());
+  CHECK_NOTHROW(tclbind::eval(interp, "puts nothing").value());
   CHECK(!ta.called);
   ta.mark();
   CHECK(!ta.called);
-  CHECK_NOTHROW(boost::tcl::eval(interp, "puts something").value());
+  CHECK_NOTHROW(tclbind::eval(interp, "puts something").value());
   CHECK(ta.called);
 }
