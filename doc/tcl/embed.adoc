@@ -6,14 +6,14 @@ but to avoid boilerplate & provide usage of the C++ type system & exceptions.
 
 
 ```cpp
-#include <tclbind.hpp>
+#include <metal::tcl.hpp>
 
 int main(int argc, char ** argv)
 try
 {
-  namespace tcl = tclbind;
+  namespace tcl = metal::tcl;
   // smart pointer to an interpreter
-  auto ip = tclbind::make_interpreter();
+  auto ip = metal::tcl::make_interpreter();
 
   // find the executable so we can interpret argv/argc
   Tcl_FindExecutable(doctest::getContextOptions()->binary_name.c_str());

@@ -1,3 +1,4 @@
+include(CTest)
 enable_testing()
 
 file(GLOB ALL_TEST_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
@@ -13,8 +14,7 @@ foreach(test ${ALL_TEST_FILES})
     get_filename_component(test_name ${test} NAME_WE)
 
     add_executable(${test_name} main_test.cpp ${test})
-    target_link_libraries(${test_name} PUBLIC main_test)
-    target_include_directories(${test_name} PUBLIC ../include ${TCL_INCLUDE_PATH})
+    target_link_libraries(${test_name} PUBLIC main_test metal::tcl)
     add_test(NAME ${test_name} COMMAND $<TARGET_FILE:${test_name}>)
 endforeach()
 

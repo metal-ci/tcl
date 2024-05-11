@@ -12,7 +12,7 @@ BOOST_DESCRIBE_ENUM(foobar, foo, bar);
 The above will be available in tcl bindings as `equivalent`:
 
 ```cpp
-tclbind::create_command(mod, "func")
+metal::tcl::create_command(mod, "func")
     .add_function(foobar fb) {printf("Done with fb\n");};
 ```
 
@@ -25,7 +25,7 @@ Alternatively enum can also be defined as commands so that the
 type is `equal`.
 
 ```cpp
-tclbind::create_command(mod, "foobar")
+metal::tcl::create_command(mod, "foobar")
                         .add_enum<foobar>();
 ```
 

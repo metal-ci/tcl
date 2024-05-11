@@ -5,8 +5,8 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <tclbind/channel.hpp>
-#include <tclbind/eval.hpp>
+#include <metal/tcl/channel.hpp>
+#include <metal/tcl/eval.hpp>
 #include <filesystem>
 
 #include <boost/beast/core/flat_buffer.hpp>
@@ -14,7 +14,7 @@
 #include "doctest.h"
 
 
-namespace tcl = tclbind;
+namespace tcl = metal::tcl;
 using namespace boost;
 
 extern Tcl_Interp *interp;
@@ -90,7 +90,7 @@ TEST_CASE("channel")
 
   std::filesystem::path pt{__FILE__};
   auto pp = pt.parent_path() / "channel.tcl";
-  CHECK_NOTHROW(tclbind::eval_file(interp, pp.string()));
+  CHECK_NOTHROW(metal::tcl::eval_file(interp, pp.string()));
 
   Tcl_UnregisterChannel(interp, chan);
 

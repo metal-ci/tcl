@@ -5,10 +5,10 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <tclbind/exception.hpp>
-#include <tclbind/interpreter.hpp>
-#include <tclbind/object.hpp>
-#include <tclbind/eval.hpp>
+#include <metal/tcl/exception.hpp>
+#include <metal/tcl/interpreter.hpp>
+#include <metal/tcl/object.hpp>
+#include <metal/tcl/eval.hpp>
 #include <string>
 #include <stdexcept>
 
@@ -23,7 +23,7 @@ try {
 }
 catch (...)
 {
-    auto obj = tclbind::make_exception_object();
+    auto obj = metal::tcl::make_exception_object();
     Tcl_SetObjResult(interp, obj.get());
     return TCL_ERROR;
 }
@@ -34,7 +34,7 @@ TEST_CASE("exception")
 {
     {
         Tcl_CreateObjCommand(interp, "throw_test", throw_cmd, nullptr, nullptr);
-        CHECK_THROWS_WITH(tclbind::eval(interp, R"(throw_test)"), "test-error");
+        CHECK_THROWS_WITH(metal::tcl::eval(interp, R"(throw_test)"), "test-error");
         Tcl_DeleteCommand(interp, "throw_test");
 
     }

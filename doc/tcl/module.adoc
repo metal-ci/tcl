@@ -7,13 +7,13 @@ our shared object must be named `libexample.so` or `libexample.dll`.
 The module name then needs to be `Title_Case`, like so:
 
 ```cpp
-#include <tclbind/builtin.hpp>
-#include <tclbind/package.hpp>
-#include <tclbind/command.hpp>
+#include <metal/tcl/builtin.hpp>
+#include <metal/tcl/package.hpp>
+#include <metal/tcl/command.hpp>
 
-TCLBIND_PACKAGE(Example, "1.0", mod)
+METAL_TCL_PACKAGE(Example, "1.0", mod)
 {
-  namespace tcl = tclbind;
+  namespace tcl = metal::tcl;
   tcl::create_command(mod, "hello")
     .add_function(
         [](std::string name)

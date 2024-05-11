@@ -103,7 +103,7 @@ struct example_class
 
 BOOST_DESCRIBE_STRUCT(example_class, (), (get, set, value, static_value, static_get, static_set));
 
-    auto & cmd = tclbind::create_command(mod, "example-class");
+    auto & cmd = metal::tcl::create_command(mod, "example-class");
     // create the class with all the described members
     cmd.add_class<example_class>()
     // register a constructor

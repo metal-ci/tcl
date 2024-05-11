@@ -5,7 +5,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <tclbind.hpp>
+#include <metal/tcl.hpp>
 
 #include <boost/asio/write.hpp>
 #include <boost/asio/read_until.hpp>
@@ -14,7 +14,7 @@
 #include <filesystem>
 
 namespace asio = boost::asio;
-namespace tcl = tclbind;
+namespace tcl = metal::tcl;
 
 
 struct wrapped_stdio

@@ -1,9 +1,9 @@
-# tclbind 
+# metal::tcl 
 
 ```cpp
-TCLBIND_PACKAGE(GetStarted, "1.0", mod)
+METAL_TCL_PACKAGE(GetStarted, "1.0", mod)
 {
-  tclbind::create_command(mod, "hello")
+  metal::tcl::create_command(mod, "hello")
     .add_function(
         +[](boost::core::string_view name)
         {

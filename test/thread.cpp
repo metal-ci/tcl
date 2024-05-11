@@ -5,7 +5,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <tclbind/thread.hpp>
+#include <metal/tcl/thread.hpp>
 #include <iostream>
 
 #include "doctest.h"
@@ -16,7 +16,7 @@ struct channel
 
 TEST_CASE("thread")
 {
-  tclbind::thread thr{
+  metal::tcl::thread thr{
     []
     {
       std::cout << "hello world" << std::endl;
